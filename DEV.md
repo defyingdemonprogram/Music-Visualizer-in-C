@@ -16,9 +16,7 @@
 After building `raylib` as per the README, set the `.env` file as follows:
 
 ```bash
-#!/usr/bin/sh
-
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 ```
 
 ## Explanation of `build.sh`
@@ -28,21 +26,30 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 set -xe
 
-CFLAGS="-Wall -Wextra `pkg-config --cflags raylib`"
-LIBS="`pkg-config --libs raylib`"
+CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"
+LIBS="$(pkg-config --libs raylib) -lglfw -lm -ldl -lpthread"
 
-chmod +700 ./env
-./env
-clang $CFLAGS -o musializer main.c $LIBS
+chmod +700 ./.env
+./.env
+mkdir -p ./build/
+clang $CFLAGS -o ./build/musializer ./src/main.c $LIBS
+clang -o ./build/fft ./src/fft.c -lm
 ```
 
-- `set -xe`: Enables printing each command before execution (`-x`) and exits the script if any command fails (`-e`).
-- `clang`: Compiles `main.c` using the specified `CFLAGS` and outputs the executable as `musializer`.
-- `CFLAGS="-Wall -Wextra"` sets the following options for the `clang` compiler:
-  - `-Wall`: Enables most commonly used warning messages, helping to identify potential issues in the code that could lead to bugs.
-  - `-Wextra`: Enables additional warning messages not covered by `-Wall`, helping to catch more potential issues.
-  - `pkg-config --cflags raylib`: Retrieves the compiler flags necessary to compile a program that uses `raylib`. `pkg-config` is a tool that provides metadata about installed libraries. The `--cflags` option outputs the flags required to compile a program using `raylib`.
-- `LIBS="pkg-config --libs raylib"` retrieves the linker flags necessary to link a program that uses `raylib`. The `--libs` option outputs the flags required to link a program with `raylib`.
+- `set -xe`: This option combination causes the script to print each command before executing it (`-x`) and to exit immediately if any command fails (`-e`).
+- `clang`: This command is used to compile the source files into executables.
+  - `clang $CFLAGS -o ./build/musializer ./src/main.c $LIBS`: Compiles `main.c` with the specified `CFLAGS` and creates the `musializer` executable in the `./build` directory.
+  - `clang -o ./build/fft ./src/fft.c -lm`: Compiles `fft.c` into an executable named `fft` in the `./build` directory, linking against the math library (`-lm`).
+- `CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"`: Sets the compiler flags:
+  - `-Wall`: Enables most common warning messages, which helps to catch potential bugs.
+  - `-Wextra`: Enables additional warning messages not covered by `-Wall`, providing more thorough checks.
+  - `pkg-config --cflags raylib`: Retrieves the necessary compiler flags for the `raylib` library, which are added to `CFLAGS`.
+- `LIBS="$(pkg-config --libs raylib) -lglfw -lm -ldl -lpthread"`: Specifies the linker flags:
+  - `pkg-config --libs raylib`: Retrieves the linker flags required to link against `raylib`.
+  - `-lglfw`: Links against the GLFW library.
+  - `-lm`: Links against the math library.
+  - `-ldl`: Links against the dynamic linking library.
+  - `-lpthread`: Links against the POSIX threads library.
 
 To convert one file extenstion to other, (note only changing the extention doesnot actually change the encodeing of encoding of that format.)
 ```bash

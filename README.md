@@ -37,10 +37,14 @@ sudo make install
 
 **Warning**: If you want to compile a different type of library (static, etc.), you must run `make clean` before recompiling.
 
+Insatll GLFW library
+```bash
+sudo apt-get install libglfw3-dev
+```
 ### Build and Run the Project
 
 ```bash
-./build.sh && ./musializer
+./build.sh && ./build/musializer
 ```
 
 ## References

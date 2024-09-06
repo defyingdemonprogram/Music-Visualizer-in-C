@@ -77,6 +77,36 @@ The Inverse Fourier Transform is used to convert the frequency-domain representa
 By understanding both the Fourier Transform and its inverse, you can effectively analyze and manipulate signals and data in both the time and frequency domains.
 
 
+### DFT vs FFT
+
+The Fourier Transform is essential in music analysis for several reasons. It enables the decomposition of complex audio signals into their constituent frequencies, which is crucial for understanding, processing, and analyzing music. 
+
+| **Aspect**            | **DFT (Discrete Fourier Transform)** | **FFT (Fast Fourier Transform)**  |
+|-----------------------|--------------------------------------|-----------------------------------|
+| **Definition**        | Mathematical transform converting a discrete signal from time/space to frequency domain | Algorithm to compute the DFT efficiently |
+| **Complexity**        | \(O(N^2)\)                           | \(O(N \log N)\)                   |
+| **Efficiency**        | Less efficient, especially for large \(N\) | Highly efficient, especially for large \(N\) |
+| **Calculation**       | Requires \(N^2\) operations (multiplications and additions) | Uses divide-and-conquer techniques to reduce operations |
+| **Usage**             | Theoretical contexts or small datasets | Practical applications like signal processing, image analysis |
+| **Example Size**      | Suitable for small datasets          | Suitable for large datasets       |
+| **Practicality**      | Less practical for large data due to high computation time | Widely used in practice for large data sets due to efficiency |
+
+### Samples and Frames
+
+| **Aspect**            | **Samples**                                               | **Frames**                                                 |
+|-----------------------|-----------------------------------------------------------|------------------------------------------------------------|
+| **Definition**        | Individual data points representing the amplitude of the audio signal at a specific point in time | Groups of samples processed together as a single unit |
+| **Purpose**           | Capturing the waveform of the audio signal                | Facilitating efficient processing and analysis of audio data |
+| **Size**              | Typically one data point per channel per unit of time (e.g., one sample for left and one for right in stereo) | Contains multiple samples (e.g., 1024, 2048, 4096 samples) |
+| **Usage**             | Fundamental building blocks of digital audio              | Used in signal processing, analysis, and encoding algorithms |
+| **Time Resolution**   | High time resolution (depends on the sample rate, e.g., 44.1 kHz means 44,100 samples per second) | Lower time resolution compared to individual samples but higher frequency resolution |
+| **Frequency Resolution** | Low frequency resolution (single sample doesn't provide frequency information) | Higher frequency resolution (more samples in a frame lead to better frequency analysis) |
+| **Examples in Audio Processing** | Directly used in playback and basic audio manipulations | Used in FFT, audio compression (e.g., MP3), and other signal processing tasks |
+| **Memory and Storage** | Each sample requires storage (e.g., 16-bit or 24-bit per sample) | Frames can be compressed or encoded, often reducing storage requirements |
+| **Processing**        | Real-time playback and simple transformations             | Batch processing, often requiring buffering and more computational power |
+
+
+
 ### References
 - [Fourier Transform - Wikipedia](https://en.wikipedia.org/wiki/Fourier_transform)
 - [The Fourier Transform - Fourier Transform.com](https://www.thefouriertransform.com/)

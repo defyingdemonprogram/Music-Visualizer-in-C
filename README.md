@@ -44,8 +44,11 @@ sudo apt-get install libglfw3-dev
 ### Build and Run the Project
 
 ```bash
-./build.sh && ./build/musializer
+./build.sh
+LD_LIBRARY_PATH=./build/ ./build/musializer song.mp3
 ```
+- Press <key>Q</key> to quit the program
+- Press <key>R</key> to hotreload if you make changes in plug in code during execution of musializer
 
 ## References
 

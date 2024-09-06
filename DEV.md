@@ -56,49 +56,59 @@ To convert one file extenstion to other, (note only changing the extention doesn
 ffmpeg -i original_audio destination_audio.mp3
 ```
 
-## DFT vs FFT
+Here’s a revised version of the content with improved clarity and formatting:
 
-The Fourier Transform is essential in music analysis for several reasons. It enables the decomposition of complex audio signals into their constituent frequencies, which is crucial for understanding, processing, and analyzing music. 
+### Some Commands
 
-| **Aspect**            | **DFT (Discrete Fourier Transform)** | **FFT (Fast Fourier Transform)**  |
-|-----------------------|--------------------------------------|-----------------------------------|
-| **Definition**        | Mathematical transform converting a discrete signal from time/space to frequency domain | Algorithm to compute the DFT efficiently |
-| **Complexity**        | \(O(N^2)\)                           | \(O(N \log N)\)                   |
-| **Efficiency**        | Less efficient, especially for large \(N\) | Highly efficient, especially for large \(N\) |
-| **Calculation**       | Requires \(N^2\) operations (multiplications and additions) | Uses divide-and-conquer techniques to reduce operations |
-| **Usage**             | Theoretical contexts or small datasets | Practical applications like signal processing, image analysis |
-| **Example Size**      | Suitable for small datasets          | Suitable for large datasets       |
-| **Practicality**      | Less practical for large data due to high computation time | Widely used in practice for large data sets due to efficiency |
+**`memcpy`**: This function copies memory from one location to another. It is used to specify the range of bytes to copy, which should not exceed the size of the source memory block.
 
-### Samples and Frames
-
-| **Aspect**            | **Samples**                                               | **Frames**                                                 |
-|-----------------------|-----------------------------------------------------------|------------------------------------------------------------|
-| **Definition**        | Individual data points representing the amplitude of the audio signal at a specific point in time | Groups of samples processed together as a single unit |
-| **Purpose**           | Capturing the waveform of the audio signal                | Facilitating efficient processing and analysis of audio data |
-| **Size**              | Typically one data point per channel per unit of time (e.g., one sample for left and one for right in stereo) | Contains multiple samples (e.g., 1024, 2048, 4096 samples) |
-| **Usage**             | Fundamental building blocks of digital audio              | Used in signal processing, analysis, and encoding algorithms |
-| **Time Resolution**   | High time resolution (depends on the sample rate, e.g., 44.1 kHz means 44,100 samples per second) | Lower time resolution compared to individual samples but higher frequency resolution |
-| **Frequency Resolution** | Low frequency resolution (single sample doesn't provide frequency information) | Higher frequency resolution (more samples in a frame lead to better frequency analysis) |
-| **Examples in Audio Processing** | Directly used in playback and basic audio manipulations | Used in FFT, audio compression (e.g., MP3), and other signal processing tasks |
-| **Memory and Storage** | Each sample requires storage (e.g., 16-bit or 24-bit per sample) | Frames can be compressed or encoded, often reducing storage requirements |
-| **Processing**        | Real-time playback and simple transformations             | Batch processing, often requiring buffering and more computational power |
-
-
-### Some commands
-`memcpy` - is memory ti memory copy. It is used to specify the range of characters which could not exceed the size of the source  memory.
 ```c
-void *memcpy(void *dest, const void* src_str, size_t n)
+void *memcpy(void *dest, const void* src, size_t n);
 ```
 
-### `gcc` Compilation Command wtih linking library
+### `gcc` Compilation Command with Library Linking
+
+To compile a C program with the math library:
 
 ```bash
 gcc -o fft fft.c -lm
 ```
-- **`-lm`**: Tells the linker to include the math library (`libm`). This is necessary for functions like `sin()`, `cos()`, `sqrt()`, etc., which are defined in `math.h`.
+- **`-lm`**: This flag tells the linker to include the math library (`libm`). This is required for mathematical functions such as `sin()`, `cos()`, `sqrt()`, etc., which are defined in `math.h`.
 
+Alternatively, using `clang` with additional warnings enabled:
 
 ```bash
 clang -Wall -Wextra -o fft fft.c -lm
 ```
+
+To show the shared libraries that `libplug.so` depends on:
+
+```bash
+ldd libplug.so
+```
+
+## Hot Reloading
+
+Hot reloading allows you to apply code changes without restarting the application. Typically, you modify code, rebuild the executable, and then run the new executable. With hot reloading, you can run the application in the background, and the changes you make to the code will be reflected in the running application without having to restart it.
+
+To enable hot reloading for `music-visualizer`, you need to use dynamically linked libraries and build `raylib` as a shared object.
+
+1. **Configure `raylib` for Shared Library**:
+
+   In the `raylib/build/CMakeCache.txt` file, ensure that the `BUILD_SHARED_LIBS` option is set to `ON`:
+
+   ```cmake
+   BUILD_SHARED_LIBS:BOOL=ON
+   ```
+
+2. **Build `raylib`**:
+
+   Run the following command to build `raylib` with shared libraries:
+
+   ```bash
+   make -j3
+   ```
+
+   This command compiles `raylib` using 3 parallel jobs, which speeds up the build process.
+
+By following these steps, you can set up hot reloading for your application, allowing for faster development cycles and easier testing of code changes.

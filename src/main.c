@@ -1,71 +1,17 @@
 #include <assert.h>
+#include <cstddef>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <complex.h>
-#include <math.h>
 
 #include <raylib.h>
+#include <dlfcn.h>
+#include <time.h>
+#include "plug.h"
 
-#define N 256
 #define ARRAY_LEN(xs) (sizeof(xs)/sizeof(xs[0]))
-
-float pi;
-
-float in[N];
-float complex out[N];
-float max_amp;
-
-typedef struct {
-    float left;
-    float right;
-} Frame;
-
-// Ported from https://rosettacode.org/wiki/Fast_Fourier_transform#Python
-void fft(float in[], size_t stride, float complex out[], size_t n) {
-    assert(n > 0);
-
-    if (n == 1) {
-        out[0] = in[0];
-        return;
-    }
-
-    fft(in, stride * 2, out, n / 2);
-    fft(in + stride, stride * 2, out + n / 2, n / 2);
-
-    for (size_t k = 0; k < n / 2; ++k) {
-        float t = (float)k / n;
-        float complex v = cexp(-2 * I * pi * t) * out[k + n / 2];
-        float complex e = out[k];
-        out[k]       = e + v;
-        out[k + n / 2] = e - v;
-    }
-}
-
-float amp(float complex z) {
-    float a = fabsf(crealf(z));
-    float b = fabsf(cimagf(z));
-    return (a > b) ? a : b;
-}
-
-void callback(void *bufferData, unsigned int frames) {
-    if (frames < N) return;
-
-    Frame *fs = bufferData;
-
-    for (size_t i = 0; i < N; ++i) {
-        in[i] = (i < frames) ? fs[i].left : 0.0f;
-    }
-    
-    fft(in, 1, out, N);
-
-    max_amp = 0.0f;
-    for (size_t i = 0; i < N; ++i) {
-        float a = amp(out[i]);
-        if (max_amp < a) max_amp = a;
-    }
-}
 
 char *shift_args(int *argc, char ***argv) {
     assert(*argc > 0);
@@ -75,10 +21,70 @@ char *shift_args(int *argc, char ***argv) {
     return result;
 }
 
-int main(int argc, char **argv) {
-    pi = atan2f(1, 1) * 4;
+const char *libplug_file_name = "libplug.so";
+void *libplug = NULL;
+plug_hello_t plug_hello = NULL;
+plug_init_t plug_init = NULL;
+plug_pre_reload_t plug_pre_reload = NULL;
+plug_post_reload_t plug_post_reload = NULL;
+plug_update_t plug_update = NULL;
+Plug plug = {0};
+
+bool reload_libplug(void)
+{
+    if (libplug != NULL) dlclose(libplug);
+
+    libplug = dlopen(libplug_file_name, RTLD_NOW);
+    if (libplug == NULL) {
+        fprintf(stderr, "ERROR: could not load %s: %s", libplug_file_name, dlerror());
+        return false;
+    }
+
+    plug_hello = dlsym(libplug, "plug_hello");
+    if (plug_hello == NULL) {
+        fprintf(stderr, "ERROR: could not find plug_hello symbol in %s: %s",
+                libplug_file_name, dlerror());
+        return false;
+    }
+
+    plug_init = dlsym(libplug, "plug_init");
+    if (plug_init == NULL) {
+        fprintf(stderr, "ERROR: could not find plug_init symbol in %s: %s",
+                libplug_file_name, dlerror());
+        return false;
+    }
+
+    plug_update = dlsym(libplug, "plug_update");
+    if (plug_update == NULL) {
+        fprintf(stderr, "ERROR: could not find plug_update symbol in %s: %s",
+                libplug_file_name, dlerror());
+        return false;
+    }
+
+    plug_pre_reload = dlsym(libplug, "plug_pre_reload");
+    if (plug_pre_reload == NULL) {
+        fprintf(stderr, "ERROR: could not find plug_pre_reload symbol in %s: %s",
+                libplug_file_name, dlerror());
+        return false;
+    }
+
+    plug_post_reload = dlsym(libplug, "plug_post_reload");
+    if (plug_post_reload == NULL) {
+        fprintf(stderr, "ERROR: could not find plug_post_reload symbol in %s: %s",
+                libplug_file_name, dlerror());
+        return false;
+    }
+
+    return true;
+}
+
+int main(int argc, char **argv)
+{
+    if (!reload_libplug()) return 1;
+
     const char *program = shift_args(&argc, &argv);
-    
+
+    // TODO: supply input files via drag&drop
     if (argc == 0) {
         fprintf(stderr, "Usage: %s <input>\n", program);
         fprintf(stderr, "ERROR: no input file is provided\n");
@@ -88,56 +94,23 @@ int main(int argc, char **argv) {
 
     InitWindow(800, 600, "Musializer");
     SetTargetFPS(60);
-
     InitAudioDevice();
 
-    Music music = LoadMusicStream(file_path);
-    if (music.stream.sampleSize != 16 && music.stream.sampleSize != 32) {
-        fprintf(stderr, "ERROR: Unsupported sample size\n");
-        return 1;
-    }
-    if (music.stream.channels != 2) {
-        fprintf(stderr, "ERROR: Unsupported number of channels\n");
-        return 1;
-    }
-    
-    PlayMusicStream(music);
-    SetMusicVolume(music, 0.5f);
-    AttachAudioStreamProcessor(music.stream, callback);
+    plug_init(&plug, file_path);
 
+    plug_init(&plug, file_path);
     while (!WindowShouldClose()) {
-        UpdateMusicStream(music);
-
-        if (IsKeyPressed(KEY_SPACE)) {
-            if (IsMusicStreamPlaying(music)) {
-                PauseMusicStream(music);
-            } else {
-                ResumeMusicStream(music);
-            }
-        }
         if (IsKeyPressed(KEY_Q)) {
-            break;
+            CloseWindow();
         }
-
-        int w = GetScreenWidth();
-        int h = GetScreenHeight();
-
-        BeginDrawing();
-        ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
-        char text[50];
-        sprintf(text, "Music FrameCount: %d", music.frameCount);
-
-        float cell_width = (float)w / N;
-        for (size_t i = 0; i < N; ++i) {
-            float t = (max_amp > 0) ? amp(out[i]) / max_amp : 0;
-            DrawRectangle(i * cell_width, h / 2 - h / 2 * t, cell_width, h / 2 * t, RED);
+        if (IsKeyPressed(KEY_R)) {
+            plug_pre_reload(&plug);
+            if (!reload_libplug()) return 1;
+            plug_post_reload(&plug);
         }
-        EndDrawing();
-        DrawText(text, 10, 10, 20, BLUE);
-        ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
+        plug_update(&plug);
     }
 
-    UnloadMusicStream(music);
     CloseAudioDevice();
     CloseWindow();
 

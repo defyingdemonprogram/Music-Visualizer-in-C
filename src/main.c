@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <cstddef>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -8,12 +7,12 @@
 
 #include <raylib.h>
 #include <dlfcn.h>
-#include <time.h>
 #include "plug.h"
 
-#define ARRAY_LEN(xs) (sizeof(xs)/sizeof(xs[0]))
+#define ARRAY_LEN(xs) sizeof(xs)/sizeof(xs[0])
 
-char *shift_args(int *argc, char ***argv) {
+char *shift_args(int *argc, char ***argv)
+{
     assert(*argc > 0);
     char *result = (**argv);
     (*argv) += 1;
@@ -36,7 +35,7 @@ bool reload_libplug(void)
 
     libplug = dlopen(libplug_file_name, RTLD_NOW);
     if (libplug == NULL) {
-        fprintf(stderr, "ERROR: could not load %s: %s", libplug_file_name, dlerror());
+        fprintf(stderr, "ERROR: could not load %s: %s\n", libplug_file_name, dlerror());
         return false;
     }
 
@@ -97,8 +96,6 @@ int main(int argc, char **argv)
     InitAudioDevice();
 
     plug_init(&plug, file_path);
-
-    plug_init(&plug, file_path);
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_Q)) {
             CloseWindow();
@@ -110,9 +107,6 @@ int main(int argc, char **argv)
         }
         plug_update(&plug);
     }
-
-    CloseAudioDevice();
-    CloseWindow();
 
     return 0;
 }

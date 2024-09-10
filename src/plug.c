@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <raylib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -56,7 +57,7 @@ void callback(void *bufferData, unsigned int frames)
 
 void plug_hello(void)
 {
-    printf("Hello from Plugin\n");
+    printf("\nHello from Plugin Version 6\n");
 }
 
 void plug_init(Plug *plug, const char *file_path)
@@ -133,7 +134,7 @@ void plug_update(Plug *plug)
         }
         a /= (size_t) f1 - (size_t) f + 1;
         float t = a/max_amp;
-        DrawRectangle(m*cell_width, h/2 - h/2*t, cell_width, h/2*t, RED);
+        DrawRectangle(m*cell_width, h/2 - h/2*t, cell_width, h/2*t, GREEN);
         m += 1;
     }
     EndDrawing();

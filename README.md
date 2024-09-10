@@ -45,8 +45,10 @@ sudo apt-get install libglfw3-dev
 
 ```bash
 ./build.sh
-LD_LIBRARY_PATH=./build/ ./build/musializer song.mp3
+export LD_LIBRARY_PATH=./build/
+./build/musializer song.mp3
 ```
+
 - Press <key>Q</key> to quit the program
 - Press <key>R</key> to hotreload if you make changes in plug in code during execution of musializer
 
@@ -54,3 +56,6 @@ LD_LIBRARY_PATH=./build/ ./build/musializer song.mp3
 
 - [Raylib](https://www.raylib.com/): Easy-to-use library for video games.
 - [Fourier Transform](https://github.com/realsanjeev/Music-gerne-classification-using-deep-learning/wiki/Fourier-Transform)
+- [FFT Implementation](https://rosettacode.org/wiki/Fast_Fourier_transform#Python)
+- [X-macros](https://en.wikipedia.org/wiki/X_macro)
+- [C Preprocessor](https://en.wikipedia.org/wiki/C_preprocessor)

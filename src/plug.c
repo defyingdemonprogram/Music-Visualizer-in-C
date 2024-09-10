@@ -67,7 +67,7 @@ void plug_init(Plug *plug, const char *file_path)
     printf("music.stream.sampleRate = %u\n", plug->music.stream.sampleRate);
     printf("music.stream.sampleSize = %u\n", plug->music.stream.sampleSize);
     printf("music.stream.channels = %u\n", plug->music.stream.channels);
-    assert(plug->music.stream.sampleSize == 16 || plug->music.stream.sampleSize);
+    assert(plug->music.stream.sampleSize == 16 || plug->music.stream.sampleSize == 32);
     assert(plug->music.stream.channels == 2);
 
     SetMusicVolume(plug->music, 0.5f);
@@ -134,7 +134,8 @@ void plug_update(Plug *plug)
         }
         a /= (size_t) f1 - (size_t) f + 1;
         float t = a/max_amp;
-        DrawRectangle(m*cell_width, h/2 - h/2*t, cell_width, h/2*t, GREEN);
+        // DrawRectangle(m*cell_width, h/2 - h/2*t, cell_width, h/2*t, RED);
+        DrawCircle(m*cell_width, h/2, h/2*t, RED);
         m += 1;
     }
     EndDrawing();

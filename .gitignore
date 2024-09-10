@@ -54,3 +54,4 @@ dkms.conf
 *.mp3
 fft
 build/*
+foo.c

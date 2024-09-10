@@ -56,46 +56,54 @@ To convert one file extenstion to other, (note only changing the extention doesn
 ffmpeg -i original_audio destination_audio.mp3
 ```
 
-Here’s a revised version of the content with improved clarity and formatting:
-
 ### Some Commands
 
-**`memcpy`**: This function copies memory from one location to another. It is used to specify the range of bytes to copy, which should not exceed the size of the source memory block.
+**`memcpy`**: This function copies a block of memory from one location to another. It requires specifying the number of bytes to copy, which must not exceed the size of the source memory block.
 
 ```c
-void *memcpy(void *dest, const void* src, size_t n);
+void *memcpy(void *dest, const void *src, size_t n);
 ```
 
 ### `gcc` Compilation Command with Library Linking
 
-To compile a C program with the math library:
+To compile a C program and link it with the math library, use:
 
 ```bash
 gcc -o fft fft.c -lm
 ```
-- **`-lm`**: This flag tells the linker to include the math library (`libm`). This is required for mathematical functions such as `sin()`, `cos()`, `sqrt()`, etc., which are defined in `math.h`.
+- **`-lm`**: This flag tells the linker to include the math library (`libm`), which provides mathematical functions such as `sin()`, `cos()`, and `sqrt()`, among others, defined in `math.h`.
 
-Alternatively, using `clang` with additional warnings enabled:
+For additional warnings and using `clang`:
 
 ```bash
 clang -Wall -Wextra -o fft fft.c -lm
 ```
 
-To show the shared libraries that `libplug.so` depends on:
+To check the shared libraries that `libplug.so` depends on:
 
 ```bash
 ldd libplug.so
 ```
 
-## Hot Reloading
+### C Preprocessor (CPP)
 
-Hot reloading allows you to apply code changes without restarting the application. Typically, you modify code, rebuild the executable, and then run the new executable. With hot reloading, you can run the application in the background, and the changes you make to the code will be reflected in the running application without having to restart it.
+The C Preprocessor (CPP) processes C source code before compilation. It handles tasks such as macro expansion, file inclusion, and conditional compilation.
 
-To enable hot reloading for `music-visualizer`, you need to use dynamically linked libraries and build `raylib` as a shared object.
+To preprocess a C source file:
 
-1. **Configure `raylib` for Shared Library**:
+```bash
+cpp foo.c
+```
 
-   In the `raylib/build/CMakeCache.txt` file, ensure that the `BUILD_SHARED_LIBS` option is set to `ON`:
+### Hot Reloading
+
+Hot reloading allows you to apply code changes without restarting the application. It enables you to modify code, rebuild the executable, and see changes without restarting the application.
+
+To set up hot reloading for `music-visualizer`, use dynamically linked libraries and build `raylib` as a shared object:
+
+1. **Configure `raylib` for Shared Libraries**:
+
+   In the `raylib/build/CMakeCache.txt` file, set the `BUILD_SHARED_LIBS` option to `ON`:
 
    ```cmake
    BUILD_SHARED_LIBS:BOOL=ON
@@ -109,6 +117,23 @@ To enable hot reloading for `music-visualizer`, you need to use dynamically link
    make -j3
    ```
 
-   This command compiles `raylib` using 3 parallel jobs, which speeds up the build process.
+   This command uses 3 parallel jobs to speed up the build process.
 
-By following these steps, you can set up hot reloading for your application, allowing for faster development cycles and easier testing of code changes.
+By following these steps, you can enable hot reloading for your application, facilitating faster development and easier testing of code changes.
+
+### Difference Between Two `typedef` Declarations
+
+| Aspect                               | `typedef void(*plug_hello_t)(void);`                  | `typedef void(plug_hello_t)(void);`                     |
+|--------------------------------------|--------------------------------------------------------|----------------------------------------------------------|
+| **Definition**                       | Creates an alias for a pointer to a function.         | Creates an alias for a function type itself.            |
+| **Type Aliased**                     | Pointer to a function: `void(*)(void)`                | Function type: `void(void)`                             |
+| **Usage**                            | Defines a pointer type used to store function pointers. | Defines a function type used to declare functions directly. |
+| **Declaration of Function Pointer**  | `plug_hello_t ptr = my_function;`                      | Not applicable; declare functions directly with `void my_function(void);` |
+| **Declaration of Function**          | `void my_function(void);`                              | `plug_hello_t another_function = my_function;` (less common) |
+| **Example Code**                     | ```c                                                    | ```c                                                     |
+|                                      | typedef void(*plug_hello_t)(void);                     | typedef void(plug_hello_t)(void);                        |
+|                                      | void my_function(void) { /*...*/ }                     | void my_function(void) { /*...*/ }                       |
+|                                      | plug_hello_t ptr = my_function; // `ptr` is a pointer to a function | plug_hello_t another_function = my_function; // direct function declaration |
+|                                      | ```                                                    | ```                                                     |
+| **Common Use Case**                  | Used for callbacks and function pointers.              | Less common; generally used for direct function declarations. |
+

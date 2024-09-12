@@ -58,10 +58,22 @@ ffmpeg -i original_audio destination_audio.mp3
 
 ### Some Commands
 
-**`memcpy`**: This function copies a block of memory from one location to another. It requires specifying the number of bytes to copy, which must not exceed the size of the source memory block.
+- **`memcpy`**: This function copies a block of memory from one location to another. It requires specifying the number of bytes to copy, which must not exceed the size of the source memory block.
+- **`memset`**: This function sets a block of memory to a specific value.
+- **`memmove`**: This function moves a block of memory from one location to another, handling overlapping regions correctly.
 
 ```c
 void *memcpy(void *dest, const void *src, size_t n);
+void *memset(void *s, int c, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
+```
+
+### Example Usage
+
+```c
+memcpy(dest, src, n);
+memset(buffer, value, n);
+memmove(dest, src, n);
 ```
 
 ### `gcc` Compilation Command with Library Linking
@@ -137,3 +149,8 @@ By following these steps, you can enable hot reloading for your application, fac
 |                                      | ```                                                    | ```                                                     |
 | **Common Use Case**                  | Used for callbacks and function pointers.              | Less common; generally used for direct function declarations. |
 
+### Changing How the Program Initializes the State
+
+Previously, the application was responsible for allocating the state and passing it to the plugin during each frame. This setup required methods like `plug_update`. Moving forward, the responsibility for allocating the state will shift from the application to the plugin itself.
+
+![Changing the Allocation of State from `main.c` to Plugin](images/change_state_diagram.png)

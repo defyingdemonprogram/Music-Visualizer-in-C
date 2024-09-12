@@ -46,7 +46,7 @@ sudo apt-get install libglfw3-dev
 ```bash
 ./build.sh
 export LD_LIBRARY_PATH=./build/
-./build/musializer song.mp3
+./build/musializer
 ```
 
 - Press <key>Q</key> to quit the program
@@ -59,3 +59,4 @@ export LD_LIBRARY_PATH=./build/
 - [FFT Implementation](https://rosettacode.org/wiki/Fast_Fourier_transform#Python)
 - [X-macros](https://en.wikipedia.org/wiki/X_macro)
 - [C Preprocessor](https://en.wikipedia.org/wiki/C_preprocessor)
+- [Cdecl: C gibberish to English](https://cdecl.org/?q=float+%28*fs%29%5B2%5D)

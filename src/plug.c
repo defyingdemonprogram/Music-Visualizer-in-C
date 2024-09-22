@@ -7,11 +7,13 @@
 #include <string.h>
 #include <time.h>
 
-#define N (1 << 13)
+#define N (1 << 15)
 #define FONT_SIZE 69
 
-float in[N];
-float complex out[N];
+float in_raw[N];
+float in_win[N];
+float complex out_raw[N];
+float out_log[N]; // our ear hear the logarithmic scale
 
 typedef struct
 {
@@ -56,20 +58,18 @@ float amp(float complex z)
 {
   float a = fabsf(crealf(z));
   float b = fabsf(cimagf(z));
-  if (a < b)
-    return b;
-  return a;
+  return logf(a * a + b * b);
 }
 
 void callback(void *bufferData, unsigned int frames)
 {
   // https://cdecl.org/?q=float+%28*fs%29%5B2%5D
-  float(*fs)[plug->music.stream.channels] = bufferData;
+  float(*fs)[2] = bufferData; // music is treated to have 2 channel regardless of music type
 
   for (size_t i = 0; i < frames; ++i)
   {
-    memmove(in, in + 1, (N - 1) * sizeof(in[0]));
-    in[N - 1] = fs[i][0];
+    memmove(in_raw, in_raw + 1, (N - 1) * sizeof(in_raw[0]));
+    in_raw[N - 1] = fs[i][0];
   }
 }
 
@@ -144,6 +144,7 @@ void plug_update(void)
       }
 
       plug->music = LoadMusicStream(file_path);
+
       if (IsMusicReady(plug->music))
       {
         plug->error = false;
@@ -167,42 +168,62 @@ void plug_update(void)
   int h = GetRenderHeight();
 
   BeginDrawing();
-  ClearBackground(CLITERAL(Color){0x18, 0x18, 0x18, 0xFF});
+  ClearBackground(CLITERAL(Color){
+      0x18, 0x18, 0x18, 0xFF});
 
   if (IsMusicReady(plug->music))
   {
-    fft(in, 1, out, N);
-
-    float max_amp = 0.0f;
+    // Apply the Hann Window on the Input - https://en.wikipedia.org/wiki/Hann_function
     for (size_t i = 0; i < N; ++i)
     {
-      float a = amp(out[i]);
+      float t = (float)i / (N - 1);
+      float hann = 0.5 - 0.5 * cosf(2 * PI * t);
+      in_win[i] = in_raw[i] * hann;
+    }
+
+    // FFT
+    fft(in_win, 1, out_raw, N);
+
+    // "Squash" into the Logarithmic Scale
+    float step = 1.06;
+    float lowf = 1.0f;
+    size_t m = 0;
+    float max_amp = 1.0f;
+    for (float f = lowf; (size_t)f < N / 2; f = ceilf(f * step))
+    {
+      float f1 = ceilf(f * step);
+      float a = 0.0f;
+      for (size_t q = (size_t)f; q < N / 2 && q < (size_t)f1; ++q)
+      {
+        float b = amp(out_raw[q]);
+        if (b > a)
+          a = b;
+      }
       if (max_amp < a)
         max_amp = a;
+      out_log[m++] = a;
     }
 
-    float step = 1.06;
-    size_t m = 0;
-    for (float f = 20.0f; (size_t)f < N; f *= step)
+    // Normalize Frequencies to 0..1 range
+    for (size_t i = 0; i < m; ++i)
     {
-      m += 1;
+      out_log[i] /= max_amp;
     }
 
+    // Display the Frequencies
     float cell_width = (float)w / m;
-    m = 0;
-    for (float f = 20.0f; (size_t)f < N; f *= step)
+    for (size_t i = 0; i < m; ++i)
     {
-      float f1 = f * step;
-      float a = 0.0f;
-      for (size_t q = (size_t)f; q < N && q < (size_t)f1; ++q)
-      {
-        a += amp(out[q]);
-      }
-      a /= (size_t)f1 - (size_t)f + 1;
-      float t = a / max_amp;
-      // DrawRectangle(m*cell_width, h/2 - h/2*t, cell_width, h/2*t, RED);
-      DrawCircle(m * cell_width, h / 2, h / 2 * t, RED);
-      m += 1;
+      float t = out_log[i];
+
+      DrawCircle(i * cell_width, h/2 - h / 3 * t, h/4*t, RED);
+      char character[20];
+      printf("%zu\n\n", i);
+      sprintf(character, "%zu", i);
+      printf("Character : %s has frequency: %f\n", character, t);
+      DrawText(character, 10, 30, 50,  BLUE);
+      DrawRectangle(i * cell_width, h - h / 3 * t, cell_width, h * 2 / 3 * t, GREEN);
+
     }
   }
   else

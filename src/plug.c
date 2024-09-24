@@ -14,6 +14,7 @@ float in_raw[N];
 float in_win[N];
 float complex out_raw[N];
 float out_log[N]; // our ear hear the logarithmic scale
+float out_smooth[N];
 
 typedef struct
 {
@@ -166,6 +167,7 @@ void plug_update(void)
 
   int w = GetRenderWidth();
   int h = GetRenderHeight();
+  float dt = GetFrameTime();
 
   BeginDrawing();
   ClearBackground(CLITERAL(Color){
@@ -210,19 +212,24 @@ void plug_update(void)
       out_log[i] /= max_amp;
     }
 
+    float smoothness = 8;
+    for (size_t i=0; i<m; ++i) {
+      out_smooth[i] += (out_log[i] - out_smooth[i])*smoothness*dt;
+    }
+
+
     // Display the Frequencies
-    float cell_width = (float)w / m;
+    float cell_width = (float) w / m;
     for (size_t i = 0; i < m; ++i)
     {
-      float t = out_log[i];
+      float hue = (float) i/m;
+      float t = out_smooth[i];
+      float saturation = 0.75f;
+      float value = 1.0f;
+      Color color = ColorFromHSV(hue*360, saturation, value);
 
-      DrawCircle(i * cell_width, h/2 - h / 3 * t, h/4*t, RED);
-      char character[20];
-      printf("%zu\n\n", i);
-      sprintf(character, "%zu", i);
-      printf("Character : %s has frequency: %f\n", character, t);
-      DrawText(character, 10, 30, 50,  BLUE);
-      DrawRectangle(i * cell_width, h - h / 3 * t, cell_width, h * 2 / 3 * t, GREEN);
+      DrawCircle(i * cell_width, h/2 - h / 3 * t, h/4*t, color);
+      DrawRectangle(i * cell_width, h - h / 3 * t, ceilf(cell_width), h * 2 / 3 * t, color);
 
     }
   }

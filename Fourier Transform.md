@@ -84,9 +84,9 @@ The Fourier Transform is essential in music analysis for several reasons. It ena
 | **Aspect**            | **DFT (Discrete Fourier Transform)** | **FFT (Fast Fourier Transform)**  |
 |-----------------------|--------------------------------------|-----------------------------------|
 | **Definition**        | Mathematical transform converting a discrete signal from time/space to frequency domain | Algorithm to compute the DFT efficiently |
-| **Complexity**        | \(O(N^2)\)                           | \(O(N \log N)\)                   |
-| **Efficiency**        | Less efficient, especially for large \(N\) | Highly efficient, especially for large \(N\) |
-| **Calculation**       | Requires \(N^2\) operations (multiplications and additions) | Uses divide-and-conquer techniques to reduce operations |
+| **Complexity**        | $O(N^2)$                           | $O(N \log N)$                   |
+| **Efficiency**        | Less efficient, especially for large $N$ | Highly efficient, especially for large $N$ |
+| **Calculation**       | Requires $N^2$ operations (multiplications and additions) | Uses divide-and-conquer techniques to reduce operations |
 | **Usage**             | Theoretical contexts or small datasets | Practical applications like signal processing, image analysis |
 | **Example Size**      | Suitable for small datasets          | Suitable for large datasets       |
 | **Practicality**      | Less practical for large data due to high computation time | Widely used in practice for large data sets due to efficiency |
@@ -105,6 +105,25 @@ The Fourier Transform is essential in music analysis for several reasons. It ena
 | **Memory and Storage** | Each sample requires storage (e.g., 16-bit or 24-bit per sample) | Frames can be compressed or encoded, often reducing storage requirements |
 | **Processing**        | Real-time playback and simple transformations             | Batch processing, often requiring buffering and more computational power |
 
+### Hanning Window
+
+The Hanning window, also known as the Hann window, is a type of window function used in signal processing, particularly when performing the Fast Fourier Transform (FFT). Its mathematical form is defined as:
+
+$$
+w(n) = 0.5 \left(1 - \cos\left(\frac{2\pi n}{N-1}\right)\right)
+$$
+
+where $N$ is the total number of samples in the window and $n$ ranges from $0$ to $N-1$.
+
+#### Significance in FFT:
+
+1. **Reducing Spectral Leakage**: When performing FFT, signals are often analyzed over a finite length, which can introduce discontinuities at the edges of the sampled segment. This can cause spectral leakage, where energy from one frequency component spills into others. The Hanning window smooths the edges of the sampled signal, reducing this leakage.
+
+2. **Improving Frequency Resolution**: By tapering the signal, the Hanning window helps in obtaining a clearer representation of the frequency components. It enhances the frequency resolution by minimizing the amplitude of abrupt changes in the signal.
+
+3. **Smoothing Effect**: The Hanning window provides a gentle transition from the center of the window to the edges, which helps in representing the frequency content more accurately without introducing sharp spikes.
+
+4. **Energy Preservation**: The Hanning window is designed to preserve the energy of the signal over the windowed period, which is essential for accurate analysis.
 
 
 ### References
@@ -112,3 +131,4 @@ The Fourier Transform is essential in music analysis for several reasons. It ena
 - [The Fourier Transform - Fourier Transform.com](https://www.thefouriertransform.com/)
 - [Fast Fourier Transform - Wikipedia](https://en.wikipedia.org/wiki/Fast_Fourier_transform)
 - [Fourier Transform - Wolfram MathWorld](https://mathworld.wolfram.com/FourierTransform.html)
+- [Windowing Function - Wikipedia](https://en.wikipedia.org/wiki/Window_function)

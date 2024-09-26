@@ -228,8 +228,19 @@ void plug_update(void)
       float value = 1.0f;
       Color color = ColorFromHSV(hue*360, saturation, value);
 
-      DrawCircle(i * cell_width, h/2 - h / 3 * t, h/4*t, color);
-      DrawRectangle(i * cell_width, h - h / 3 * t, ceilf(cell_width), h * 2 / 3 * t, color);
+      Vector2 startPos = {
+        i*cell_width + cell_width/2,
+        h - h*2/3*t,
+      };
+
+      Vector2 endPos = {
+        i*cell_width + cell_width/2,
+        h,
+      };
+
+      DrawLineEx(startPos, endPos, 3, color);
+      DrawCircleV(startPos, cell_width, color);
+      // DrawRectangle(i * cell_width, h - h / 3 * t, ceilf(cell_width), h * 2 / 3 * t, color);
 
     }
   }

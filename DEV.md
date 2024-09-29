@@ -51,10 +51,12 @@ clang -o ./build/fft ./src/fft.c -lm
   - `-ldl`: Links against the dynamic linking library.
   - `-lpthread`: Links against the POSIX threads library.
 
+### Converting music format with other using `ffmpeg`
 To convert one file extenstion to other, (note only changing the extention doesnot actually change the encodeing of encoding of that format.)
 ```bash
 ffmpeg -i original_audio destination_audio.mp3
 ```
+Learn more about ffmpeg in [official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
 
 ### Some Commands
 
@@ -150,7 +152,36 @@ By following these steps, you can enable hot reloading for your application, fac
 | **Common Use Case**                  | Used for callbacks and function pointers.              | Less common; generally used for direct function declarations. |
 
 ### Changing How the Program Initializes the State
+From `features/drag-and-drop` branch
 
 Previously, the application was responsible for allocating the state and passing it to the plugin during each frame. This setup required methods like `plug_update`. Moving forward, the responsibility for allocating the state will shift from the application to the plugin itself.
 
 ![Changing the Allocation of State from `main.c` to Plugin](images/change_state_diagram.png)
+
+### Removing the Artifacts in rendered Graphics
+From `4-feature/shaders` branch
+
+**Aliasing** refers to the visual artifacts that occur when a high-frequency signal is sampled at a rate that is insufficient to accurately represent it. In digital images, this can manifest as jagged edges or "stair-stepping" on diagonal lines and curves, making the image appear less smooth or pixelated.
+
+**Anti-Aliasing** is a technique used to reduce the effects of aliasing, creating smoother transitions and reducing jagged edges in images. Here are some common types of anti-aliasing:
+
+1. **Spatial Anti-Aliasing**:
+   - **Supersampling**: Renders the image at a higher resolution and then downsamples it to the desired resolution. This averages out the color of pixels, resulting in smoother edges.
+   - **Multisampling**: Samples multiple points within each pixel and averages the results. It's more efficient than supersampling since it only processes the edges where needed. In Raylib, we enable flag for MSAA(Multisample Anti-Aliasing (MSAA)) with a 4x sampling rate by `SetConfigFlags(FLAG_MSAA_4X_HINT);` as 
+   - More on: [Evaluating Different Spatial Anti Aliasing Techniques - PDF](https://kth.diva-portal.org/smash/get/diva2:1106244/FULLTEXT01.pdf)
+
+2. **Post-Processing Anti-Aliasing**:
+   - **FXAA (Fast Approximate Anti-Aliasing)**: A screen-space anti-aliasing technique that smooths edges based on the contrast of pixels, resulting in a softer image without heavy computational costs.
+   - **SMAA (Subpixel Morphological Anti-Aliasing)**: Combines techniques from both morphological and edge detection methods, providing high-quality results with less performance impact than supersampling.
+   - More details on [SMAA vs FXAA: A Guide to Anti-Aliasing Techniques](https://9meters.com/technology/graphics/smaa-vs-fxaa-a-guide-to-anti-aliasing-techniques)
+
+3. **Temporal Anti-Aliasing**:
+   - **TAA (Temporal Anti-Aliasing)**: Utilizes information from previous frames to smooth out edges over time, helping to reduce flickering and aliasing without significantly impacting performance.
+   - More details on [Temporal Anti-Aliasing (TAA) - developer.unigine.com](https://developer.unigine.com/en/docs/latest/principles/render/antialiasing/taa)
+
+### References:
+- [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
+- [Anti-aliasing - wikipedia](https://en.wikipedia.org/wiki/Anti-aliasing)
+- [Anti-Aliasing Detailed Explanation- OpenGL](https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing)
+- [Shader Programming - Blogpost](https://clauswilke.com/art/post/shaders)
+- [Learn all about shaders](https://iquilezles.org/articles/) 

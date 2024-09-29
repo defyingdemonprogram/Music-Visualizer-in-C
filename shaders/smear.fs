@@ -1,0 +1,26 @@
+#version 330 core
+
+// Input vertex attributes (from vertex shader)
+in vec2 fragTexCoord;
+in vec4 fragColor;
+
+// Output fragment color
+out vec4 finalColor;
+
+void main() {
+    float r = 0.25; // Radius for alpha cutoff
+    vec2 p = fragTexCoord - vec2(0.5); // Center the coordinates
+
+    if (length(p) <= 0.5) {
+        float s = length(p) - r; // Distance from edge of inner radius
+        
+        if (s <= 0.0) {
+            finalColor = fragColor; // Fully opaque inside radius
+        } else {
+            float t = 1.0 - s / (0.5 - r); // Calculate alpha based on distance
+            finalColor = vec4(fragColor.rgb, t*t*t); // Set alpha based on the calculated value
+        }
+    } else {
+        finalColor = vec4(0.0); // Fully transparent outside radius
+    }
+}

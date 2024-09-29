@@ -52,6 +52,7 @@ int main()
 {
     if (!reload_libplug()) return 1;
 
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(800, 600, "Musializer");
     SetTargetFPS(60);
     InitAudioDevice();

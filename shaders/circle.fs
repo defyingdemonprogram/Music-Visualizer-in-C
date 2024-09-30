@@ -8,17 +8,17 @@ in vec4 fragColor;
 out vec4 finalColor;
 
 void main() {
-    float r = 0.1; // Radius for alpha cutoff
+    float r = 0.07; // Radius for alpha cutoff
     vec2 p = fragTexCoord - vec2(0.5); // Center the coordinates
     float distance = length(p);
 
     if (distance <= 0.5) {
         float s = distance - r; // Distance from edge of inner radius
         if (s <= 0.0) {
-            finalColor = fragColor; // Fully opaque inside radius
+            finalColor = fragColor*1.5; // Fully opaque inside radius
         } else {
             float t = 1.0 - s / (0.5 - r); // Calculate alpha based on distance
-            finalColor = vec4(fragColor.rgb, t); // Set alpha based on the calculated value
+            finalColor = mix(vec4(fragColor.xyz, 0), fragColor*1.5, t*t*t*t*t); // Set alpha using a power function for smoother transitions
         }
     } else {
         finalColor = vec4(0.0); // Fully transparent outside radius

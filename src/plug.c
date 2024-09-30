@@ -11,13 +11,6 @@
 #define N (1 << 15)
 #define FONT_SIZE 69
 
-float in_raw[N];
-float in_win[N];
-float complex out_raw[N];
-float out_log[N]; // our ear hear the logarithmic scale
-float out_smooth[N];
-float out_smear[N];
-
 typedef struct
 {
   Music music;
@@ -27,13 +20,15 @@ typedef struct
   bool error;
 } Plug;
 
-Plug *plug = NULL;
+float in_raw[N];
+float in_win[N];
+float complex out_raw[N];
+float out_log[N]; // our ear hear the logarithmic scale
+float out_smooth[N];
+float out_smear[N];
 
-typedef struct
-{
-  float left;
-  float right;
-} Frame;
+
+Plug *plug = NULL;
 
 // Ported from https://rosettacode.org/wiki/Fast_Fourier_transform#Python
 void fft(float in[], size_t stride, float complex out[], size_t n)
@@ -83,6 +78,7 @@ void plug_init()
   plug = malloc(sizeof(*plug));
   assert(plug != NULL && "Buy More RAM since it is insufficient");
   memset(plug, 0, sizeof(*plug));
+
   plug->font = LoadFontEx("./fonts/Alegreya-Regular.ttf", FONT_SIZE, NULL, 0);
   plug->circle = LoadShader(NULL, "./shaders/circle.fs");
   plug->smear = LoadShader(NULL, "./shaders/smear.fs");
@@ -223,7 +219,7 @@ void plug_update(void)
     }
 
     float smoothness = 8;
-    float smearness = 6;
+    float smearness = 3;
     for (size_t i = 0; i < m; ++i)
     {
       out_smooth[i] += (out_log[i] - out_smooth[i]) * smoothness * dt;
@@ -234,6 +230,8 @@ void plug_update(void)
     float cell_width = (float)w / m;
     float saturation = 0.75f;
     float value = 1.0f;
+
+    // Display the Bars
     for (size_t i = 0; i < m; ++i)
     {
       float hue = (float)i / m;
@@ -249,11 +247,10 @@ void plug_update(void)
           i * cell_width + cell_width / 2,
           h,
       };
-      float thick = cell_width / 2 * sqrtf(t);
+      float thick = cell_width / 3 * sqrtf(t);
 
       DrawLineEx(startPos, endPos, thick, color);
-      DrawCircleV(startPos, cell_width, color);
-      // DrawRectangle(i * cell_width, h - h / 3 * t, ceilf(cell_width), h * 2 / 3 * t, color);
+      // DrawCircleV(startPos, cell_width, color);
     }
     Texture2D texture = {rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
@@ -272,14 +269,15 @@ void plug_update(void)
           i * cell_width + cell_width / 2,
           h - h * 2 / 3 * end,
       };
-      float radius = cell_width * sqrtf(end);
+
+      float radius = cell_width * 3 * sqrtf(end);
       Vector2 origin = {0};
       if (endPos.y >= startPos.y)
       {
         Rectangle dest = {
-            .x = startPos.x - radius,
+            .x = startPos.x - radius/2,
             .y = startPos.y,
-            .width = 2 * radius,
+            .width = radius,
             .height = endPos.y - startPos.y};
         Rectangle source = {0, 0, 1, 0.5};
         DrawTexturePro(texture, source, dest, origin, 0, color);
@@ -287,9 +285,9 @@ void plug_update(void)
       else
       {
         Rectangle dest = {
-            .x = endPos.x - radius,
+            .x = endPos.x - radius/2,
             .y = endPos.y,
-            .width = 2 * radius,
+            .width = radius,
             .height = startPos.y - endPos.y};
         Rectangle source = {0, 0.5, 1, 0.5};
         DrawTexturePro(texture, source, dest, origin, 0, color);
@@ -308,7 +306,8 @@ void plug_update(void)
           i * cell_width + cell_width / 2,
           h - h * 2 / 3 * t,
       };
-      float radius = cell_width * 5 * sqrtf(t);
+
+      float radius = cell_width * 6 * sqrtf(t);
       Vector2 position = {
           .x = center.x - radius,
           .y = center.y - radius,

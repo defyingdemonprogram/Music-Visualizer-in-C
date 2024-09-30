@@ -167,7 +167,7 @@ void plug_update(void)
       }
     }
 
-    if (IsKeyPressed(KEY_Q))
+    if (IsKeyPressed(KEY_W))
     {
       StopMusicStream(plug->music);
       PlayMusicStream(plug->music);

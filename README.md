@@ -49,8 +49,10 @@ export LD_LIBRARY_PATH=./build/
 ./build/musializer
 ```
 
-- Press <key>Q</key> to quit the program
-- Press <key>R</key> to hotreload if you make changes in plug in code during execution of musializer
+- Press <kbd>Q</kbd> to quit the program
+- Press <kbd>R</kbd> to hotreload if you make changes in plug in code during execution of musializer
+- Press <kbd>SPACE</kbd> to pause/play music
+- Press <kbd>W</kbd> to restart the music
 
 ## References
 

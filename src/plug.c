@@ -2,11 +2,11 @@
 #include <assert.h>
 #include <math.h>
 #include <raylib.h>
+#include <complex.h>
 #include <rlgl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #define N (1 << 15)
 #define FONT_SIZE 69

@@ -36,7 +36,7 @@ bool reload_libplug(void)
     #define PLUG(name, ...) \
         name = dlsym(libplug, #name); \
         if (name == NULL) { \
-            fprintf(stderr, "ERROR: could not find %s symbol in %s: %s", \
+            fprintf(stderr, "ERROR: could not find %s symbol in %s: %s\n", \
                     #name, libplug_file_name, dlerror()); \
             return false; \
         }

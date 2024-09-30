@@ -13,4 +13,3 @@ if [ ! -z "${HOTRELOAD}" ]; then
 else
     clang $CFLAGS -o ./build/musializer ./src/plug.c ./src/main.c $LIBS
 fi
-clang -o ./build/fft ./src/fft.c -lm

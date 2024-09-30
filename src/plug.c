@@ -28,7 +28,6 @@ float out_log[N]; // our ear hear the logarithmic scale
 float out_smooth[N];
 float out_smear[N];
 
-
 Plug *plug = NULL;
 
 // Ported from https://rosettacode.org/wiki/Fast_Fourier_transform#Python
@@ -110,34 +109,9 @@ void plug_post_reload(Plug *prev)
 
 void plug_update(void)
 {
-  if (IsMusicReady(plug->music))
-  {
-    UpdateMusicStream(plug->music);
-  }
-
-  if (IsKeyPressed(KEY_SPACE))
-  {
-    if (IsMusicReady(plug->music))
-    {
-      if (IsMusicStreamPlaying(plug->music))
-      {
-        PauseMusicStream(plug->music);
-      }
-      else
-      {
-        ResumeMusicStream(plug->music);
-      }
-    }
-  }
-
-  if (IsKeyPressed(KEY_Q))
-  {
-    if (IsMusicReady(plug->music))
-    {
-      StopMusicStream(plug->music);
-      PlayMusicStream(plug->music);
-    }
-  }
+  int w = GetRenderWidth();
+  int h = GetRenderHeight();
+  float dt = GetFrameTime();
 
   if (IsFileDropped())
   {
@@ -173,16 +147,31 @@ void plug_update(void)
     UnloadDroppedFiles(droppedFiles);
   }
 
-  int w = GetRenderWidth();
-  int h = GetRenderHeight();
-  float dt = GetFrameTime();
-
   BeginDrawing();
   ClearBackground(CLITERAL(Color){
       0x18, 0x18, 0x18, 0xFF});
 
   if (IsMusicReady(plug->music))
   {
+    UpdateMusicStream(plug->music);
+
+    if (IsKeyPressed(KEY_SPACE))
+    {
+      if (IsMusicStreamPlaying(plug->music))
+      {
+        PauseMusicStream(plug->music);
+      }
+      else
+      {
+        ResumeMusicStream(plug->music);
+      }
+    }
+
+    if (IsKeyPressed(KEY_Q))
+    {
+      StopMusicStream(plug->music);
+      PlayMusicStream(plug->music);
+    }
     // Apply the Hann Window on the Input - https://en.wikipedia.org/wiki/Hann_function
     for (size_t i = 0; i < N; ++i)
     {
@@ -260,8 +249,8 @@ void plug_update(void)
     Texture2D texture = {rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
     // Display the Smears
-    SetShaderValue(plug->circle, plug->circle_radius_location, (float[1]){ 0.3f }, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(plug->circle, plug->circle_power_location, (float[1]){ 3.0f }, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(plug->circle, plug->circle_radius_location, (float[1]){0.3f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(plug->circle, plug->circle_power_location, (float[1]){3.0f}, SHADER_UNIFORM_FLOAT);
     BeginShaderMode(plug->circle);
     for (size_t i = 0; i < m; ++i)
     {
@@ -283,7 +272,7 @@ void plug_update(void)
       if (endPos.y >= startPos.y)
       {
         Rectangle dest = {
-            .x = startPos.x - radius/2,
+            .x = startPos.x - radius / 2,
             .y = startPos.y,
             .width = radius,
             .height = endPos.y - startPos.y};
@@ -293,7 +282,7 @@ void plug_update(void)
       else
       {
         Rectangle dest = {
-            .x = endPos.x - radius/2,
+            .x = endPos.x - radius / 2,
             .y = endPos.y,
             .width = radius,
             .height = startPos.y - endPos.y};
@@ -305,8 +294,8 @@ void plug_update(void)
 
     // Display the Circles
 
-        SetShaderValue(plug->circle, plug->circle_radius_location, (float[1]){ 0.07f }, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(plug->circle, plug->circle_power_location, (float[1]){ 5.0f }, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(plug->circle, plug->circle_radius_location, (float[1]){0.07f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(plug->circle, plug->circle_power_location, (float[1]){5.0f}, SHADER_UNIFORM_FLOAT);
     BeginShaderMode(plug->circle);
     for (size_t i = 0; i < m; ++i)
     {

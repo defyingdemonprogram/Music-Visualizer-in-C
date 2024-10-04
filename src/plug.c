@@ -211,8 +211,8 @@ void plug_init() {
     assert(plug != NULL && "Buy More RAM since it is insufficient");
     memset(plug, 0, sizeof(*plug));
 
-    plug->font = LoadFontEx("./fonts/Alegreya-Regular.ttf", FONT_SIZE, NULL, 0);
-    plug->circle = LoadShader(NULL, "./shaders/circle.fs");
+    plug->font = LoadFontEx("./resources/fonts/Alegreya-Regular.ttf", FONT_SIZE, NULL, 0);
+    plug->circle = LoadShader(NULL, "./resources/shaders/circle.fs");
     plug->circle_radius_location = GetShaderLocation(plug->circle, "radius");
     plug->circle_power_location = GetShaderLocation(plug->circle, "power");
     plug->screen = LoadRenderTexture(RENDER_WIDTH, RENDER_HEIGHT);
@@ -233,7 +233,7 @@ void plug_post_reload(Plug* prev) {
         AttachAudioStreamProcessor(plug->music.stream, callback);
     }
     UnloadShader(plug->circle);
-    plug->circle = LoadShader(NULL, "./shaders/circle.fs");
+    plug->circle = LoadShader(NULL, "./resources/shaders/circle.fs");
     plug->circle_radius_location = GetShaderLocation(plug->circle, "radius");
     plug->circle_power_location = GetShaderLocation(plug->circle, "power");
 }

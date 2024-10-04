@@ -53,6 +53,7 @@ export LD_LIBRARY_PATH=./build/
 - Press <kbd>R</kbd> to hotreload if you make changes in plug in code during execution of musializer
 - Press <kbd>SPACE</kbd> to pause/play music
 - Press <kbd>W</kbd> to restart the music
+- Press <kbd>F</kdb> to render the visualization in `output.mp4` file
 
 ## References
 

@@ -1,6 +1,10 @@
 # Music Visualizer
 
-This project aims to construct a visualizer for music. To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
+This project aims to construct a visualizer for music. 
+## Demo 
+https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
+
+To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
 
 ### Building `raylib` on Linux
 
@@ -24,7 +28,7 @@ You can compile three different types of `raylib` libraries:
 - Dynamic shared library (often used on Linux)
 - Web library
 
-Clone the `raylib` repository from GitHub, then compile it:
+**Clone the `raylib` repository from GitHub, then compile it as dynamic shared library:**
 
 ```bash
 git clone https://github.com/raysan5/raylib.git raylib
@@ -37,7 +41,7 @@ sudo make install
 
 **Warning**: If you want to compile a different type of library (static, etc.), you must run `make clean` before recompiling.
 
-Insatll GLFW library
+**Insatll GLFW library**
 ```bash
 sudo apt-get install libglfw3-dev
 ```
@@ -49,11 +53,13 @@ export LD_LIBRARY_PATH=./build/
 ./build/musializer
 ```
 
-- Press <kbd>Q</kbd> to quit the program
-- Press <kbd>R</kbd> to hotreload if you make changes in plug in code during execution of musializer
-- Press <kbd>SPACE</kbd> to pause/play music
-- Press <kbd>W</kbd> to restart the music
-- Press <kbd>F</kdb> to render the visualization in `output.mp4` file
+- Press <kbd>Q</kbd> to exit the program.
+- Press <kbd>R</kbd> to hot reload any changes made to the plugin code while Musializer is running.
+- Press <kbd>SPACE</kbd> to toggle pause/play for the music.
+- Press <kbd>W</kbd> to restart the music.
+- Press <kbd>F</kbd> to save the visualization as an `output.mp4` file.
+
+**Note**: Once the music visualization completes the `ffmpeg` rendering, it doesnot return to playing music. Press <kbd>W</kbd> to start the music in the app.
 
 ## References
 
@@ -63,3 +69,4 @@ export LD_LIBRARY_PATH=./build/
 - [X-macros](https://en.wikipedia.org/wiki/X_macro)
 - [C Preprocessor](https://en.wikipedia.org/wiki/C_preprocessor)
 - [Cdecl: C gibberish to English](https://cdecl.org/?q=float+%28*fs%29%5B2%5D)
+- [Music used in demo - credit to penguinmusic](https://pixabay.com/music/future-bass-powerful-beat-121791/)

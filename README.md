@@ -9,7 +9,9 @@ To set up `raylib` in your environment, follow the [steps on GitHub](https://git
 
 ## Quick Start
 
-Dependencies: [raylib](https://www.raylib.com/) and all associated transitive dependencies.
+Dependencies: 
+- [raylib](https://www.raylib.com/) and all its associated transitive dependencies.
+- [ffmpeg](https://ffmpeg.org/) executable available in `PATH` environment variable. (it is called as a child process)
 
 *Only Linux is supported for Now.*
 ```bash

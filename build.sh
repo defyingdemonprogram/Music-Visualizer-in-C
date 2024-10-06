@@ -9,9 +9,9 @@ mkdir -p ./build/
 if [ ! -z "${HOTRELOAD}" ]; then
     clang $CFLAGS -o ./build/libplug.so -fPIC -shared ./src/plug.c ./src/ffmpeg_linux.c $LIBS
     # for hotreloading
-    clang $CFLAGS -DHOTRELOAD -o ./build/musializer ./src/main.c $LIBS
+    clang $CFLAGS -DHOTRELOAD -o ./build/musializer ./src/main.c $LIBS -L./build/ -Wl,-rpath=./build/ -Wl,-rpath=./
 else
-    clang $CFLAGS -o ./build/musializer ./src/plug.c ./src/ffmpeg_linux.c ./src/main.c $LIBS
+    clang $CFLAGS -o ./build/musializer ./src/plug.c ./src/ffmpeg_linux.c ./src/main.c $LIBS -L./build/
 fi
 
 cp -r ./resources/ ./build/

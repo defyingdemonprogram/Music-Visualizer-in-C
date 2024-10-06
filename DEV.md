@@ -19,37 +19,56 @@ After building `raylib` as per the README, set the `.env` file as follows:
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 ```
 
-## Explanation of `build.sh`
+### Explanation of `build.sh`
 
 ```bash
-#!/usr/bin/sh
+#!/bin/sh
 
 set -xe
 
-CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"
-LIBS="$(pkg-config --libs raylib) -lglfw -lm -ldl -lpthread"
+CFLAGS="-Wall -Wextra -ggdb `pkg-config --cflags raylib`"
+LIBS="`pkg-config --libs raylib` `pkg-config --libs glfw3` -lm -ldl -lpthread"
 
-chmod +700 ./.env
-./.env
 mkdir -p ./build/
-clang $CFLAGS -o ./build/musializer ./src/main.c $LIBS
-clang -o ./build/fft ./src/fft.c -lm
-```
+if [ ! -z "${HOTRELOAD}" ]; then
+    clang $CFLAGS -o ./build/libplug.so -fPIC -shared ./src/plug.c ./src/ffmpeg_linux.c $LIBS
+    # for hotreloading
+    clang $CFLAGS -DHOTRELOAD -o ./build/musializer ./src/main.c $LIBS -L./build/ -Wl,-rpath=./build/ -Wl,-rpath=./
+else
+    clang $CFLAGS -o ./build/musializer ./src/plug.c ./src/ffmpeg_linux.c ./src/main.c $LIBS -L./build/
+fi
 
-- `set -xe`: This option combination causes the script to print each command before executing it (`-x`) and to exit immediately if any command fails (`-e`).
-- `clang`: This command is used to compile the source files into executables.
-  - `clang $CFLAGS -o ./build/musializer ./src/main.c $LIBS`: Compiles `main.c` with the specified `CFLAGS` and creates the `musializer` executable in the `./build` directory.
-  - `clang -o ./build/fft ./src/fft.c -lm`: Compiles `fft.c` into an executable named `fft` in the `./build` directory, linking against the math library (`-lm`).
-- `CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"`: Sets the compiler flags:
-  - `-Wall`: Enables most common warning messages, which helps to catch potential bugs.
-  - `-Wextra`: Enables additional warning messages not covered by `-Wall`, providing more thorough checks.
-  - `pkg-config --cflags raylib`: Retrieves the necessary compiler flags for the `raylib` library, which are added to `CFLAGS`.
-- `LIBS="$(pkg-config --libs raylib) -lglfw -lm -ldl -lpthread"`: Specifies the linker flags:
-  - `pkg-config --libs raylib`: Retrieves the linker flags required to link against `raylib`.
-  - `-lglfw`: Links against the GLFW library.
-  - `-lm`: Links against the math library.
-  - `-ldl`: Links against the dynamic linking library.
-  - `-lpthread`: Links against the POSIX threads library.
+cp -r ./resources/ ./build/
+```
+- **`set -xe`**: This option combination causes the script to print each command before executing it (`-x`) and to exit immediately if any command fails (`-e`).
+
+- **`CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"`**: Sets the compiler flags:
+    - `-Wall`: Enables most common warning messages, helping to catch potential bugs.
+    - `-Wextra`: Enables additional warning messages not covered by `-Wall`, providing more thorough checks.
+    - `$(pkg-config --cflags raylib)`: Retrieves necessary compiler flags for the `raylib` library.
+
+- **`LIBS="$(pkg-config --libs raylib) $(pkg-config --libs glfw3) -lm -ldl -lpthread"`**: Specifies the linker flags:
+    - `$(pkg-config --libs raylib)`: Retrieves linker flags required to link against `raylib`.
+    - `$(pkg-config --libs glfw3)`: Retrieves linker flags required to link against GLFW.
+    - `-lm`: Links against the math library.
+    - `-ldl`: Links against the dynamic linking library.
+    - `-lpthread`: Links against the POSIX threads library.
+
+- **`mkdir -p ./build/`**: Creates the `build` directory if it doesn't already exist.
+
+- **Conditional Compilation**:
+  - If `HOTRELOAD` is set:
+    - `clang $CFLAGS -o ./build/libplug.so -fPIC -shared ./src/plug.c ./src/ffmpeg_linux.c $LIBS`: Compiles the shared library for hot reloading.
+    - `clang $CFLAGS -DHOTRELOAD -o ./build/musializer ./src/main.c $LIBS -L./build/ -Wl,-rpath=./build/ -Wl,-rpath=./`: 
+      - `-L./build/`: Adds the `./build` directory to the library search path, allowing the linker to find the shared libraries located there.
+      - `-Wl,-rpath=./build/`: Sets the runtime library search path to `./build`, so that when the executable is run, it knows where to look for shared libraries.
+      - `-Wl,-rpath=./`: Additionally sets the runtime library search path to the current directory. This can help ensure that if any libraries are also present there, they can be found without needing to specify their full path.
+
+  - If `HOTRELOAD` is not set:
+    - `clang $CFLAGS -o ./build/musializer ./src/plug.c ./src/ffmpeg_linux.c ./src/main.c $LIBS -L./build/`: Compiles everything into the main executable without the hot reloading support.
+
+- **`cp -r ./resources/ ./build/`**: Copies the resources directory into the build directory. 
+
 
 ### Converting music format with other using `ffmpeg`
 To convert one file extenstion to other, (note only changing the extention doesnot actually change the encodeing of encoding of that format.)
@@ -179,9 +198,16 @@ From `4-feature/shaders` branch
    - **TAA (Temporal Anti-Aliasing)**: Utilizes information from previous frames to smooth out edges over time, helping to reduce flickering and aliasing without significantly impacting performance.
    - More details on [Temporal Anti-Aliasing (TAA) - developer.unigine.com](https://developer.unigine.com/en/docs/latest/principles/render/antialiasing/taa)
 
+### RPATH
+
+rpath (runtime library search path) is a mechanism used in computing to specify the locations where a program should look for shared libraries at runtime. It is particularly relevant in the context of dynamic linking, where executables or shared libraries need to locate their required dependencies. The advantanges of using rpath are:
+- **Ease of Deployment**: By embedding library paths directly into executables, developers can create relocatable applications that do not require users to set up library paths manually.
+- **Version Control**: Rpath allows applications to use specific versions of libraries without conflicts with system-wide installations, facilitating easier management of dependencies.
+
 ### References:
 - [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
 - [Anti-aliasing - wikipedia](https://en.wikipedia.org/wiki/Anti-aliasing)
 - [Anti-Aliasing Detailed Explanation- OpenGL](https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing)
 - [Shader Programming - Blogpost](https://clauswilke.com/art/post/shaders)
-- [Learn all about shaders](https://iquilezles.org/articles/) 
+- [Learn all about shaders](https://iquilezles.org/articles/)
+- [Understanding RPATH - duerrenberger.dev](https://duerrenberger.dev/blog/2021/08/04/understanding-rpath-with-cmake/)

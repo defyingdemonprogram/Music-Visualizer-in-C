@@ -1,10 +1,22 @@
 # Music Visualizer
 
-This project aims to construct a visualizer for music. 
+This project aims to construct a visualizer for music and render high quality videos of them. 
+
 ## Demo 
 https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
 
 To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
+
+## Quick Start
+
+Dependencies: [raylib](https://www.raylib.com/) and all associated transitive dependencies.
+
+*Only Linux is supported for Now.*
+```bash
+./build.sh
+./build/musializer
+```
+
 
 ### Building `raylib` on Linux
 
@@ -47,11 +59,16 @@ sudo apt-get install libglfw3-dev
 ```
 ### Build and Run the Project
 
+For **Hot Reloading**, execute the following commands:
+
 ```bash
+export HOTRELOAD=1
 ./build.sh
 export LD_LIBRARY_PATH=./build/
 ./build/musializer
 ```
+
+This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to [build.sh](./build.sh).
 
 - Press <kbd>Q</kbd> to exit the program.
 - Press <kbd>R</kbd> to hot reload any changes made to the plugin code while Musializer is running.
@@ -70,3 +87,4 @@ export LD_LIBRARY_PATH=./build/
 - [C Preprocessor](https://en.wikipedia.org/wiki/C_preprocessor)
 - [Cdecl: C gibberish to English](https://cdecl.org/?q=float+%28*fs%29%5B2%5D)
 - [Music used in demo - credit to penguinmusic](https://pixabay.com/music/future-bass-powerful-beat-121791/)
+- [rpath - Wikipedia](https://en.wikipedia.org/wiki/Rpath)

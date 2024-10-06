@@ -50,7 +50,10 @@ int ffmpeg_start_rendering(size_t width, size_t height, size_t fps, const char *
             "-i", sound_file_path,
 
             "-c:v", "libx264",
+            "-vb", "2500k",
             "-c:a", "aac",
+            "-ab", "200k",
+            "-pix_fmt", "yuv420p",
             "output.mp4",
 
             NULL

@@ -5,8 +5,6 @@ This project aims to construct a visualizer for music and render high quality vi
 ## Demo 
 https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
 
-To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
-
 ## Quick Start
 
 Dependencies: 
@@ -21,6 +19,7 @@ Dependencies:
 
 
 ### Building `raylib` on Linux
+To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
 
 You need **GCC** (or an alternative C99 compiler), **make**, **git**, and **CMake** to build the system:
 

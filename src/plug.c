@@ -301,6 +301,7 @@ void plug_update(void) {
                 plug->wave_samples = LoadWaveSamples(plug->wave);
                 plug->ffmpeg = ffmpeg_start_rendering(plug->screen.texture.width, plug->screen.texture.height, RENDER_FPS, plug->file_path);
                 plug->rendering = true;
+                SetTraceLogLevel(LOG_NONE);
             }
 
             size_t m = fft_analyze(GetFrameTime());
@@ -320,13 +321,34 @@ void plug_update(void) {
             DrawTextEx(plug->font, label, position, plug->font.baseSize, 0, color);
         }
     } else {
-        if (plug->wave_cursor >= plug->wave.frameCount && fft_settled()) {
-            ffmpeg_end_rendering(plug->ffmpeg);
-            UnloadWave(plug->wave);
-            UnloadWaveSamples(plug->wave_samples);
-            plug->rendering = false;
-            fft_clean();
+        if (plug->ffmpeg == -1) {
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                SetTraceLogLevel(LOG_INFO);
+                UnloadWave(plug->wave);
+                UnloadWaveSamples(plug->wave_samples);
+                plug->rendering = false;
+                fft_clean();
+                PlayMusicStream(plug->music);
+            }
+
+            const char *label = "Failed to start FFmpeg (Press ESC)";
+            Color color = RED;
+            Vector2 size = MeasureTextEx(plug->font, label, plug->font.baseSize, 0);
+            Vector2 position = {
+                w/2 - size.x/2,
+                h/2 - size.y/2,
+            };
+            DrawTextEx(plug->font, label, position, plug->font.baseSize, 0, color);
         } else {
+            if (plug->wave_cursor >= plug->wave.frameCount && fft_settled()) {
+                ffmpeg_end_rendering(plug->ffmpeg);
+                SetTraceLogLevel(LOG_INFO);
+                UnloadWave(plug->wave);
+                UnloadWaveSamples(plug->wave_samples);
+                plug->rendering = false;
+                fft_clean();
+                PlayMusicStream(plug->music);
+            } else {
             const char *label = "Rendering video...";
             Color color = WHITE;
 
@@ -355,6 +377,7 @@ void plug_update(void) {
             Image image = LoadImageFromTexture(plug->screen.texture);
             ffmpeg_send_frame_flipped(plug->ffmpeg, image.data, image.width, image.height);
             UnloadImage(image);
+            }
         }
     }
 

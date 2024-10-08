@@ -57,7 +57,7 @@ int main()
     InitAudioDevice();
 
     plug_init();
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose() && !IsKeyPressed(KEY_ESCAPE)) {
         if (IsKeyPressed(KEY_Q)) {
             CloseWindow();
         }

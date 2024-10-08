@@ -71,13 +71,11 @@ export LD_LIBRARY_PATH=./build/
 
 This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to [build.sh](./build.sh).
 
-- Press <kbd>Q</kbd> to exit the program.
+- Press <kbd>Q</kbd> or <kbd>ESC</kbd> to exit the program.
 - Press <kbd>R</kbd> to hot reload any changes made to the plugin code while Musializer is running.
 - Press <kbd>SPACE</kbd> to toggle pause/play for the music.
 - Press <kbd>W</kbd> to restart the music.
 - Press <kbd>F</kbd> to save the visualization as an `output.mp4` file.
-
-**Note**: Once the music visualization completes the `ffmpeg` rendering, it doesnot return to playing music. Press <kbd>W</kbd> to start the music in the app.
 
 ## References
 

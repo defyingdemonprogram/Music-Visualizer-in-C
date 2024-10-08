@@ -343,7 +343,7 @@ void plug_update(void) {
             };
             DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
         } else {
-            if (p->wave_cursor >= p->wave.frameCount && fft_settled()) {
+            if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) {
                 ffmpeg_end_rendering(p->ffmpeg);
                 SetTraceLogLevel(LOG_INFO);
                 UnloadWave(p->wave);
@@ -359,6 +359,29 @@ void plug_update(void) {
             Vector2 position = { w / 2 - size.x / 2, h / 2 - size.y / 2 };
             DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
 
+            // Progress bar
+            float bar_width = w*2/3;
+            float bar_height = p->font.baseSize*0.25;
+            float bar_progress = (float)p->wave_cursor/p->wave.frameCount;
+            float bar_padding_top = p->font.baseSize*0.5;
+            if (bar_progress > 1) bar_progress = 1;
+            Rectangle bar_filling = {
+                .x = w/2 - bar_width/2,
+                .y = h/2 + p->font.baseSize/2 + bar_padding_top,
+                .width = bar_width*bar_progress,
+                .height = bar_height,
+            };
+            DrawRectangleRec(bar_filling, WHITE);
+
+            Rectangle bar_box = {
+                .x = w/2 - bar_width/2,
+                .y = h/2 + p->font.baseSize/2 + bar_padding_top,
+                .width = bar_width,
+                .height = bar_height,
+            };
+            DrawRectangleLinesEx(bar_box, 2, WHITE);
+
+            // Rendering
             size_t chunk_size = p->wave.sampleRate / RENDER_FPS;
             float (*fs)[p->wave.channels] = (void*)p->wave_samples;
             for (size_t i = 0; i < chunk_size; ++i) {

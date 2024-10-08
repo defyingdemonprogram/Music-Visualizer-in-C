@@ -304,7 +304,7 @@ void plug_update(void) {
                 p->wave_samples = LoadWaveSamples(p->wave);
                 p->ffmpeg = ffmpeg_start_rendering(p->screen.texture.width, p->screen.texture.height, RENDER_FPS, p->file_path);
                 p->rendering = true;
-                SetTraceLogLevel(LOG_NONE);
+                SetTraceLogLevel(LOG_WARNING);
             }
 
             size_t m = fft_analyze(GetFrameTime());

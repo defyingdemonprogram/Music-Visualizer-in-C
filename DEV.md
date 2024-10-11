@@ -204,6 +204,50 @@ rpath (runtime library search path) is a mechanism used in computing to specify 
 - **Ease of Deployment**: By embedding library paths directly into executables, developers can create relocatable applications that do not require users to set up library paths manually.
 - **Version Control**: Rpath allows applications to use specific versions of libraries without conflicts with system-wide installations, facilitating easier management of dependencies.
 
+### Window Support for Musializer
+From the `8-enhancement/window-support` branch
+
+Since we are using Linux to develop a Windows application, we can leverage several methods and tools that facilitate cross-platform development. For our development, we are using two main tools:
+
+1. **MinGW (Minimalist GNU for Windows)**: This provides a GCC (GNU Compiler Collection) that targets Windows, allowing us to include Windows-specific headers like `windows.h` directly in our code.
+
+2. **Wine**: This allows us to run Windows applications on Linux. After compiling the application with MinGW, we can use Wine to test the executable directly on a Linux machine.
+
+**Note**: For more thorough testing and debugging, using a Windows environment is recommended.
+
+**Script for Compiling the Windows Application**
+```bash
+# Compile the program
+x86_64-w64-mingw32-gcc -mwindows -Wall -Wextra -ggdb \
+    -I raylib-4.5.0_win64_mingw-w64/include/ \
+    -o ./build/musializer.exe \
+    ./src/plug.c ./src/ffmpeg_windows.c ./src/musializer.c \
+    -L raylib-4.5.0_win64_mingw-w64/lib/ \
+    -l raylib -l winmm -l gdi32 -static
+```
+
+#### Explanation of the Script
+
+- **Compiler Invocation**: `x86_64-w64-mingw32-gcc` is the compiler for targeting Windows from a Linux environment.
+- **Flags**:
+  - `-mwindows`: Specifies that this is a Windows GUI application.
+  - `-Wall`: Enables all compiler's warning messages.
+  - `-Wextra`: Enables additional warning messages.
+  - `-ggdb`: Includes debugging information for GDB.
+- **Include Directory**: `-I raylib-4.5.0_win64_mingw-w64/include/` specifies the path to the header files for the Raylib library.
+- **Output File**: `-o ./build/musializer.exe` sets the name and location of the output executable.
+- **Source Files**: The following source files are compiled:
+  - `./src/plug.c`
+  - `./src/ffmpeg_windows.c`
+  - `./src/musializer.c`
+- **Library Directory**: `-L raylib-4.5.0_win64_mingw-w64/lib/` specifies the path to the library files.
+- **Linked Libraries**: 
+  - `-l raylib`: Links the Raylib library.
+  - `-l winmm`: Links the Windows multimedia library.
+  - `-l gdi32`: Links the Windows GDI (Graphics Device Interface) library.
+- **Static Linking**: `-static` ensures that the libraries are linked statically, which means the executable will not depend on dynamic libraries at runtime.
+
+
 ### References:
 - [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
 - [Anti-aliasing - wikipedia](https://en.wikipedia.org/wiki/Anti-aliasing)
@@ -211,3 +255,4 @@ rpath (runtime library search path) is a mechanism used in computing to specify 
 - [Shader Programming - Blogpost](https://clauswilke.com/art/post/shaders)
 - [Learn all about shaders](https://iquilezles.org/articles/)
 - [Understanding RPATH - duerrenberger.dev](https://duerrenberger.dev/blog/2021/08/04/understanding-rpath-with-cmake/)
+- [Wine -- Official Website](https://www.winehq.org/)

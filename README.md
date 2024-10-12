@@ -11,11 +11,21 @@ Dependencies:
 - [raylib](https://www.raylib.com/) and all its associated transitive dependencies.
 - [ffmpeg](https://ffmpeg.org/) executable available in `PATH` environment variable. (it is called as a child process)
 
-*Only Linux is supported for Now.*
-```bash
-./build.sh
+
+The project provides a bunch of build shell scripts that have the following naming scheme `build_<platform>_<compiler>.sh`. Pick the appropriate one.
+
+### POSIX
+
+```console
+./build_posix_clang.sh
 ./build/musializer
 ```
+
+Keep in mind that the application needs [./resources/](./resources/) to be present in the folder it is ran from.
+
+### Windows
+
+Windows support is at very early stage right now. Since I don't have a convenient Windows Development Environment, I'm cross compiling Musializer with [MinGW](https://www.mingw-w64.org/). See [./build_windows_mingw.sh](./build_windows_mingw.sh) for more information.
 
 
 ### Building `raylib` on Linux
@@ -64,7 +74,7 @@ For **Hot Reloading**, execute the following commands:
 
 ```bash
 export HOTRELOAD=1
-./build.sh
+./build_posix_clang.sh
 export LD_LIBRARY_PATH=./build/
 ./build/musializer
 ```

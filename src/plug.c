@@ -35,7 +35,7 @@ typedef struct {
     Wave wave;
     float *wave_samples;
     size_t wave_cursor;
-    int ffmpeg;
+    FFMPEG *ffmpeg;
 
     // FFT Analyzer
     float in_raw[N];
@@ -324,7 +324,7 @@ void plug_update(void) {
             DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
         }
     } else {
-        if (p->ffmpeg == -1) {
+        if (p->ffmpeg == NULL) {
             if (IsKeyPressed(KEY_ESCAPE)) {
                 SetTraceLogLevel(LOG_INFO);
                 UnloadWave(p->wave);

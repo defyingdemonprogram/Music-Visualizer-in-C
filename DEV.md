@@ -228,7 +228,7 @@ Since we are using Linux to develop a Windows application, we can leverage sever
 
 - **raylib**: Download the `raylib` library (win64-mingw-w64 version) from the [GitHub releases page](https://github.com/raysan5/raylib/releases/tag/5.0). Look for the file named `raylib-5.0_win64_mingw-w64.zip`.
 
-- **ffmpeg**: Download the Windows binaries from [this site](https://www.gyan.dev/ffmpeg/builds/). After unzipping the downloaded file, place `ffmpeg.exe` in the same directory as your project. Alternatively, you can add ffmpeg to the system environment path (you can view the current paths by running `path` in the Command Prompt). If you choose to add it to the environment path, update the command in `ffmpeg_windows.c` to replace `ffmpeg.exe` with `ffmpeg`.
+- **ffmpeg**: Download the Windows binaries from [gyan dev](https://www.gyan.dev/ffmpeg/builds/). After unzipping the downloaded file, place `ffmpeg.exe` in the same directory as your project. Alternatively, you can add ffmpeg to the system environment path (you can view the current paths by running `path` in the Command Prompt). If you choose to add it to the environment path, update the command in `ffmpeg_windows.c` to replace `ffmpeg.exe` with `ffmpeg`.
 
 #### Script for Compiling the Windows Application
 

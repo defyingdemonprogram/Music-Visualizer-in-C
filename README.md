@@ -1,5 +1,9 @@
 # Music Visualizer
 
+<p align=center>
+  <img src="./logo/logo-256.png">
+</p>
+
 This project aims to construct a visualizer for music and render high quality videos of them. 
 
 ## Demo 

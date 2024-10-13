@@ -7,7 +7,7 @@
 #include <raylib.h>
 
 #ifndef _WIN32
-#include <signal.h>
+#include <signal.h> // needed for sigaction()
 #endif // _WIN32
 
 #include "plug.h"
@@ -50,13 +50,16 @@ bool reload_libplug(void)
 #else
 #define reload_libplug() true
 #endif
-int main()
-{
-    #ifndef _WIN32
-        struct sigaction act = {0};
-        act.sa_handler = SIG_IGN;
-        sigaction(SIGPIPE, &act, NULL);
-    #endif // _WIN32
+int main() {
+#ifndef _WIN32
+    // NOTE: This is needed because if the pipe between Musializer and FFmpeg breaks
+    // Musializer will receive SIGPIPE on trying to write into it. While such behavior
+    // makes sense for command line utilities, Musializer is a relatively friendly GUI
+    // application that is trying to recover from such situations.
+    struct sigaction act = {0};
+    act.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &act, NULL);
+#endif // _WIN32
     if (!reload_libplug()) return 1;
 
     size_t factor = 60;

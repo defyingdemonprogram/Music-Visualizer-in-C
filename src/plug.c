@@ -334,23 +334,34 @@ void plug_update(void) {
                 PlayMusicStream(p->music);
             }
 
-            const char *label = "Failed to start FFmpeg (Press ESC)";
+            const char *label = "FFmpeg Failure: Check the Logs";
             Color color = RED;
-            Vector2 size = MeasureTextEx(p->font, label, p->font.baseSize, 0);
+            int fontSize = p->font.baseSize;
+            Vector2 size = MeasureTextEx(p->font, label, fontSize, 0);
             Vector2 position = {
                 w/2 - size.x/2,
                 h/2 - size.y/2,
             };
-            DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
+            DrawTextEx(p->font, label, position, fontSize, 0, color);
+
+            label = "(Press ESC to Continue)";
+            fontSize = p->font.baseSize * 2/3;
+            size =  MeasureTextEx(p->font, label, fontSize, 0);
+            position.x = w/2 - size.x/2;
+            position.y = h/2 - size.y/2 + fontSize;
+            DrawTextEx(p->font, label, position, fontSize, 0, color);
         } else {
             if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) {
-                ffmpeg_end_rendering(p->ffmpeg);
-                SetTraceLogLevel(LOG_INFO);
-                UnloadWave(p->wave);
-                UnloadWaveSamples(p->wave_samples);
-                p->rendering = false;
-                fft_clean();
-                PlayMusicStream(p->music);
+                if (!ffmpeg_end_rendering(p->ffmpeg)) {
+                    p->ffmpeg = NULL;
+                } else {
+                    SetTraceLogLevel(LOG_INFO);
+                    UnloadWave(p->wave);
+                    UnloadWaveSamples(p->wave_samples);
+                    p->rendering = false;
+                    fft_clean();
+                    PlayMusicStream(p->music);
+                }
             } else {
             const char *label = "Rendering video...";
             Color color = WHITE;
@@ -401,7 +412,10 @@ void plug_update(void) {
             EndTextureMode();
 
             Image image = LoadImageFromTexture(p->screen.texture);
-            ffmpeg_send_frame_flipped(p->ffmpeg, image.data, image.width, image.height);
+            if (!ffmpeg_send_frame_flipped(p->ffmpeg, image.data, image.width, image.height)) {
+                ffmpeg_end_rendering(p->ffmpeg);
+                p->ffmpeg = NULL;
+            }
             UnloadImage(image);
             }
         }

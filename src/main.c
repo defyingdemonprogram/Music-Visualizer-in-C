@@ -6,6 +6,10 @@
 #include <complex.h>
 #include <raylib.h>
 
+#ifndef _WIN32
+#include <signal.h>
+#endif // _WIN32
+
 #include "plug.h"
 
 const char *libplug_file_name = "libplug.so";
@@ -48,6 +52,11 @@ bool reload_libplug(void)
 #endif
 int main()
 {
+    #ifndef _WIN32
+        struct sigaction act = {0};
+        act.sa_handler = SIG_IGN;
+        sigaction(SIGPIPE, &act, NULL);
+    #endif // _WIN32
     if (!reload_libplug()) return 1;
 
     size_t factor = 60;

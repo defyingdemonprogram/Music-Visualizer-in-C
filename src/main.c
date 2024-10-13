@@ -60,11 +60,14 @@ int main() {
     act.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &act, NULL);
 #endif // _WIN32
+
     if (!reload_libplug()) return 1;
 
+    Image logo = LoadImage("./resources/logo/logo-256.png");
     size_t factor = 60;
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     InitWindow(factor*16, factor*9, "Musializer");
+    SetWindowIcon(logo);
     SetTargetFPS(60);
     InitAudioDevice();
 
@@ -80,6 +83,10 @@ int main() {
         }
         plug_update();
     }
+
+    CloseAudioDevice();
+    CloseWindow();
+    UnloadImage(logo);
 
     return 0;
 }

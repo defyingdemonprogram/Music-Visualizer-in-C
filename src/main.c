@@ -10,46 +10,8 @@
 #include <signal.h> // needed for sigaction()
 #endif // _WIN32
 
-#include "plug.h"
+#include "hotreload.h"
 
-const char *libplug_file_name = "libplug.so";
-void *libplug = NULL;
-
-#ifdef HOTRELOAD
-#define PLUG(name, ...) name##_t *name=NULL;
-#else
-#define PLUG(name, ...) name##_t name;
-#endif
-LIST_OF_PLUGS
-#undef PLUG
-
-#ifdef HOTRELOAD
-#include <dlfcn.h>
-bool reload_libplug(void)
-{
-    if (libplug != NULL) dlclose(libplug);
-
-    libplug = dlopen(libplug_file_name, RTLD_NOW);
-    if (libplug == NULL) {
-        fprintf(stderr, "ERROR: could not load %s: %s\n", libplug_file_name, dlerror());
-        return false;
-    }
-
-    #define PLUG(name, ...) \
-        name = dlsym(libplug, #name); \
-        if (name == NULL) { \
-            fprintf(stderr, "ERROR: could not find %s symbol in %s: %s\n", \
-                    #name, libplug_file_name, dlerror()); \
-            return false; \
-        }
-    LIST_OF_PLUGS
-    #undef PLUG
-
-    return true;
-}
-#else
-#define reload_libplug() true
-#endif
 int main() {
 #ifndef _WIN32
     // NOTE: This is needed because if the pipe between Musializer and FFmpeg breaks

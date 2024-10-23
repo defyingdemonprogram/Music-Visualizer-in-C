@@ -278,8 +278,8 @@ void plug_update(void) {
     BeginDrawing();
     ClearBackground(CLITERAL(Color){0x18, 0x18, 0x18, 0xFF});
 
-    if (!p->rendering) {
-        if (IsMusicReady(p->music)) {
+    if (!p->rendering) { // We are in the Preview Mode
+        if (IsMusicReady(p->music)) { // The music is loaded and ready
             UpdateMusicStream(p->music);
 
             if (IsKeyPressed(KEY_SPACE)) {
@@ -309,7 +309,7 @@ void plug_update(void) {
 
             size_t m = fft_analyze(GetFrameTime());
             fft_render(GetRenderWidth(), GetRenderHeight(), m);
-        } else {
+        } else { // We are waiting for the user to Drag&Drop the Music
             const char* label;
             Color color;
             if (p->error) {
@@ -323,8 +323,8 @@ void plug_update(void) {
             Vector2 position = { w / 2 - size.x / 2, h / 2 - size.y / 2 };
             DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
         }
-    } else {
-        if (p->ffmpeg == NULL) {
+    } else { // We are in the Rendering Mode
+        if (p->ffmpeg == NULL) { // Starting FFmpeg process has failed for some reason
             if (IsKeyPressed(KEY_ESCAPE)) {
                 SetTraceLogLevel(LOG_INFO);
                 UnloadWave(p->wave);
@@ -350,7 +350,7 @@ void plug_update(void) {
             position.x = w/2 - size.x/2;
             position.y = h/2 - size.y/2 + fontSize;
             DrawTextEx(p->font, label, position, fontSize, 0, color);
-        } else {
+        } else { //
             if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) {
                 if (!ffmpeg_end_rendering(p->ffmpeg)) {
                     p->ffmpeg = NULL;
@@ -362,7 +362,7 @@ void plug_update(void) {
                     fft_clean();
                     PlayMusicStream(p->music);
                 }
-            } else {
+            } else { // Rendering is going...
             const char *label = "Rendering video...";
             Color color = WHITE;
 

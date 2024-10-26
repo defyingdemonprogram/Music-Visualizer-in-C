@@ -224,8 +224,6 @@ void plug_init() {
     p->circle_radius_location = GetShaderLocation(p->circle, "radius");
     p->circle_power_location = GetShaderLocation(p->circle, "power");
     p->screen = LoadRenderTexture(RENDER_WIDTH, RENDER_HEIGHT);
-
-    p->microphone = init_audio_devices(callback);
 }
 
 // Pre-reload Function
@@ -258,8 +256,37 @@ void plug_update(void) {
 
     if (!p->rendering) { // We are in the Preview Mode
         if (p->recording) {
-            size_t m = fft_analyze(GetFrameTime());
-            fft_render(GetRenderWidth(), GetRenderHeight(), m);
+            if (p->microphone != NULL) {
+                if (IsKeyPressed(KEY_ESCAPE)) {
+                    uninit_capture_device(p->microphone);
+                    p->microphone = NULL;
+                    p->recording = false;
+                }
+
+                size_t m = fft_analyze(GetFrameTime());
+                fft_render(GetRenderWidth(), GetRenderHeight(), m);
+            } else {
+                if (IsKeyPressed(KEY_ESCAPE)) {
+                    p->recording = false;
+                }
+
+                const char *label = "Capture Device Error: Check the Logs";
+                Color color = RED;
+                int fontSize = p->font.baseSize;
+                Vector2 size = MeasureTextEx(p->font, label, fontSize, 0);
+                Vector2 position = {
+                    w/2 - size.x/2,
+                    h/2 - size.y/2,
+                };
+                DrawTextEx(p->font, label, position, fontSize, 0, color);
+
+                label = "(Press ESC to Continue)";
+                fontSize = p->font.baseSize*2/3;
+                size = MeasureTextEx(p->font, label, fontSize, 0);
+                position.x = w/2 - size.x/2,
+                position.y = h/2 - size.y/2 + fontSize,
+                DrawTextEx(p->font, label, position, fontSize, 0, color);
+            }
         } else if (IsMusicReady(p->music)) { // The music is loaded and ready
             UpdateMusicStream(p->music);
 
@@ -320,7 +347,13 @@ void plug_update(void) {
                 UnloadDroppedFiles(droppedFiles);
             }
             if (IsKeyPressed(KEY_M)) {
-                start_the_device(p->microphone);
+                p->microphone = init_default_capture_device(callback);
+                if (p->microphone != NULL) {
+                    if (!start_capture_device(p->microphone)) {
+                        uninit_capture_device(p->microphone);
+                        p->microphone = NULL;
+                    }
+                }
                 p->recording = true;
             }
 

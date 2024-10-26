@@ -28,7 +28,7 @@ int main() {
 
     Image logo = LoadImage("./resources/logo/logo-256.png");
     size_t factor = 60;
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(factor*16, factor*9, "Musializer");
     SetWindowIcon(logo);
     SetTargetFPS(60);

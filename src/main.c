@@ -32,10 +32,11 @@ int main() {
     InitWindow(factor*16, factor*9, "Musializer");
     SetWindowIcon(logo);
     SetTargetFPS(60);
+    SetExitKey(KEY_NULL);
     InitAudioDevice();
 
     plug_init();
-    while (!WindowShouldClose() && !IsKeyPressed(KEY_ESCAPE)) {
+    while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_Q)) {
             CloseWindow();
         }

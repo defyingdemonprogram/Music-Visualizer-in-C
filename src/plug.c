@@ -47,7 +47,7 @@ typedef struct {
     float out_smear[N];
 
     // Microphone
-    bool recording;
+    bool capturing;
     void *microphone;
 } Plug;
 
@@ -255,19 +255,19 @@ void plug_update(void) {
     ClearBackground(GetColor(0x151515FF));
 
     if (!p->rendering) { // We are in the Preview Mode
-        if (p->recording) {
+        if (p->capturing) {
             if (p->microphone != NULL) {
-                if (IsKeyPressed(KEY_ESCAPE)) {
+                if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_M)) {
                     uninit_capture_device(p->microphone);
                     p->microphone = NULL;
-                    p->recording = false;
+                    p->capturing = false;
                 }
 
                 size_t m = fft_analyze(GetFrameTime());
                 fft_render(GetRenderWidth(), GetRenderHeight(), m);
             } else {
                 if (IsKeyPressed(KEY_ESCAPE)) {
-                    p->recording = false;
+                    p->capturing = false;
                 }
 
                 const char *label = "Capture Device Error: Check the Logs";
@@ -324,7 +324,7 @@ void plug_update(void) {
                         p->microphone = NULL;
                     }
                 }
-                p->recording = true;
+                p->capturing = true;
             }
 
             if (IsMusicReady(p->music)) { // The music is loaded and ready
@@ -401,7 +401,16 @@ void plug_update(void) {
             DrawTextEx(p->font, label, position, fontSize, 0, color);
         } else { //
             if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) {
+                // TODO: ffmpeg processes frames slower than we generate them
+                // So when we cancel the rendering ffmpeg is still going and blocking the UI
+                // We need to do something about that. For example inform the user that
+                // we are finalizing the rendering or something.
                 if (!ffmpeg_end_rendering(p->ffmpeg)) {
+                    // NOTE: Ending FFmpeg process has failed, let's mark ffmpeg handle as NULL
+                    // which will be interpreted as "FFmpeg Failure" on the next frame.
+                    //
+                    // It should be safe to set ffmpeg to NULL even if ffmpeg_end_rendering() failed
+                    // cause it should deallocate all the resources even in case of a failure.
                     p->ffmpeg = NULL;
                 } else {
                     SetTraceLogLevel(LOG_INFO);

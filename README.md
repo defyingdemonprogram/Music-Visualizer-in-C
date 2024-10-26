@@ -90,6 +90,7 @@ This process works by encapsulating the majority of the application logic within
 - Press <kbd>SPACE</kbd> to toggle pause/play for the music.
 - Press <kbd>W</kbd> to restart the music.
 - Press <kbd>F</kbd> to save the visualization as an `output.mp4` file.
+- Press <kbd>M</kbd> for visualizing microphone input(Only available when app awaits you to Drag&Drop the file).
 
 ## References
 

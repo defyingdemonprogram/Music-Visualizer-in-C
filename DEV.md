@@ -275,6 +275,30 @@ After compilation with `mingw-gcc`, the executable can be found at `./build/musi
 wine ./build/musializer.exe
 ```
 
+
+### Added Feature to support the user audio recording and play
+**Branch**: `8-features/microphone`
+
+In this branch, we utilize the `miniaudio` library to record audio from the user's microphone and visualize that sound. Care must be taken when integrating `miniaudio` with `raylib`, as symbol collisions may occur, leading to compilation issues.
+
+#### Symbol Collision
+
+Including `miniaudio.h` directly alongside `raylib.h` can result in conflicts due to overlapping symbol definitions, especially when both libraries are included in the same translation unit. If you do not encounter errors during compilation, it may be due to dynamic linking of `raylib`, which can obscure symbol conflicts that would typically arise in static linking scenarios.
+
+#### Windows-Specific Issues
+
+For Windows users, a common problem is the interaction between `miniaudio.h` and `windows.h`. The overlapping symbols from these headers can lead to undefined references or compilation errors. To address this, we created a separate translation unit with the header file `separate_translation_unit_for_minimal_audio.h`. This file allows us to define an interface for initializing and managing audio devices without directly including `miniaudio.h`, thereby avoiding potential collisions with `windows.h` and `raylib.h`.
+
+#### Resolving Symbol Collisions
+
+1. **Separate Translation Unit**: We utilize the `separate_translation_unit_for_minimal_audio.h` header to encapsulate audio functionality, reducing the likelihood of symbol collisions with other libraries.
+
+2. **Callback Mechanism**: A callback function type (`user_callback2_t`) has been implemented, enabling user-defined audio processing without a direct dependency on `miniaudio.h`.
+
+3. **Dynamic vs. Static Linking**: Consider your linking strategy carefully. While dynamic linking can help minimize some collisions, thorough testing across various platforms is essential.
+
+**Additional Resources**: For more in-depth information on using `miniaudio`, please refer to the [official documentation](https://miniaud.io/docs/manual/index.html) and the [official GitHub repository](https://github.com/mackron/miniaudio). These resources offer comprehensive guidance on library integration and common troubleshooting.
+
 ### References:
 - [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
 - [Anti-aliasing - wikipedia](https://en.wikipedia.org/wiki/Anti-aliasing)
@@ -284,3 +308,5 @@ wine ./build/musializer.exe
 - [Understanding RPATH - duerrenberger.dev](https://duerrenberger.dev/blog/2021/08/04/understanding-rpath-with-cmake/)
 - [MinGW-w64 official website](https://www.mingw-w64.org/)
 - [Wine -- Official Website](https://www.winehq.org/)
+- [MINIAUDIO Official Documentation](https://miniaud.io/docs/manual/index.html)
+- [MINIAUDIO Official GitHub](https://github.com/mackron/miniaudio)

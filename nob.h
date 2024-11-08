@@ -237,12 +237,8 @@ bool nob_rename(const char *old_path, const char *new_path);
             }                                                                                \
                                                                                              \
             Nob_Cmd cmd = {0};                                                               \
-            nob_da_append_many(&cmd, argv, argc);                                                \
-            if (!nob_cmd_run_sync(cmd)) {                                                    \
-                nob_rename(sb.items, binary_path);                                           \
-                exit(1);                                                                     \
-            }                                                                                \
-                                                                                             \
+            nob_da_append_many(&cmd, argv, argc);                                            \
+            if (!nob_cmd_run_sync(cmd)) exit(1);                                             \
             exit(0);                                                                         \
         }                                                                                    \
     } while(0)

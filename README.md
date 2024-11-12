@@ -31,6 +31,46 @@ Keep in mind that the application needs [./resources/](./resources/) to be prese
 
 Windows support is at very early stage right now. Since I don't have a convenient Windows Development Environment, I'm cross compiling Musializer with [MinGW](https://www.mingw-w64.org/). See [./build_windows_mingw.sh](./build_windows_mingw.sh) for more information.
 
+### Build the Program Using `nob`
+
+1. **Compile the `nob.c` file:**
+
+   Use the following command to compile the `nob.c` source file:
+   ```bash
+   clang -o nob nob.c
+   ```
+
+2. **Set and Get Current Configuration:**
+
+   To configure the build settings, run:
+   ```bash
+   ./nob config -t posix -h
+   ```
+   - The `-t` flag specifies the target platform for compilation. The available options are:
+     - `posix`
+     - `win32`
+   - The `-h` flag enables hot reloading during the compilation of the Musializer app.
+
+   Configuration settings are stored in the `./build/build.conf` file. You can also modify the configuration directly in this file.
+
+3. **Build and Run the Program:**
+
+   Once the configuration is set, build and run the program with the following commands:
+   ```bash
+   ./nob build
+   ./build/musializer
+   ```
+
+4. **Run with Hot Reloading:**
+
+   To run the app with hot reloading, you need to specify the directory for the shared library:
+   ```bash
+   export LD_LIBRARY_PATH=./build/
+   ./build/musializer
+   ```
+
+This process will ensure that the program is compiled, configured, and ready to run with hot reloading enabled if needed.
+
 
 ### Building `raylib` on Linux
 To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).

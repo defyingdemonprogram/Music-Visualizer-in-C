@@ -107,14 +107,15 @@ bool load_config_from_file(const char *path, Config *config) {
     };
 
     for (size_t row = 0; content.count > 0; ++row) {
-        Nob_String_View line = nob_svchop_by_delim(&content, '\n');
-        Nob_String_View key = nob_svtrim(nob_svchop_by_delim(&line, '='));
-        Nob_String_View value = nob_svtrim(line);
+        Nob_String_View line = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
+        if (line.count == 0) continue;
+        Nob_String_View key = nob_sv_trim(nob_sv_chop_by_delim(&line, '='));
+        Nob_String_View value = nob_sv_trim(line);
 
-        if (nob_sveq(key, nob_svfrom_cstr("target"))) {
+        if (nob_sv_eq(key, nob_sv_from_cstr("target"))) {
             bool found = false;
             for (size_t t = 0; !found && t < COUNT_TARGETS; ++t) {
-                if (nob_sveq(value, nob_svfrom_cstr(target_names[t]))) {
+                if (nob_sv_eq(value, nob_sv_from_cstr(target_names[t]))) {
                     config->target = t;
                     found = true;
                 }
@@ -123,10 +124,10 @@ bool load_config_from_file(const char *path, Config *config) {
                 nob_log(NOB_ERROR, "%s:%zu: Invalid target `"SV_Fmt"`", path, row, SV_Arg(value));
                 nob_return_defer(false);
             }
-        } else if (nob_sveq(key, nob_svfrom_cstr("hotreload"))) {
-            if (nob_sveq(value, nob_svfrom_cstr("true"))) {
+        } else if (nob_sv_eq(key, nob_sv_from_cstr("hotreload"))) {
+            if (nob_sv_eq(value, nob_sv_from_cstr("true"))) {
                 config->hotreload = true;
-            } else if (nob_sveq(value, nob_svfrom_cstr("false"))) {
+            } else if (nob_sv_eq(value, nob_sv_from_cstr("false"))) {
                 config->hotreload = false;
             } else {
                 nob_log(NOB_ERROR, "%s:%zu: Invalid boolean `"SV_Fmt"`", path, row, SV_Arg(value));

@@ -258,11 +258,11 @@ typedef struct {
     const char *data;
 } Nob_String_View;
 
-Nob_String_View nob_svchop_by_delim(Nob_String_View *sv, char delim);
-Nob_String_View nob_svtrim(Nob_String_View sv);
-bool nob_sveq(Nob_String_View a, Nob_String_View b);
-Nob_String_View nob_svfrom_cstr(const char *cstr);
-Nob_String_View nob_svfrom_parts(const char *data, size_t count);
+Nob_String_View nob_sv_chop_by_delim(Nob_String_View *sv, char delim);
+Nob_String_View nob_sv_trim(Nob_String_View sv);
+bool nob_sv_eq(Nob_String_View a, Nob_String_View b);
+Nob_String_View nob_sv_from_cstr(const char *cstr);
+Nob_String_View nob_sv_from_parts(const char *data, size_t count);
 
 // Print macros for Nob_String_View
 #define SV_Fmt "%.*s"
@@ -846,13 +846,13 @@ defer:
 }
 
 
-Nob_String_View nob_svchop_by_delim(Nob_String_View *sv, char delim) {
+Nob_String_View nob_sv_chop_by_delim(Nob_String_View *sv, char delim) {
     size_t i = 0;
     while (i < sv->count && sv->data[i] != delim) {
         i += 1;
     }
 
-    Nob_String_View result = nob_svfrom_parts(sv->data, i);
+    Nob_String_View result = nob_sv_from_parts(sv->data, i);
 
     if (i < sv->count) {
         sv->count -= i + 1;
@@ -865,39 +865,39 @@ Nob_String_View nob_svchop_by_delim(Nob_String_View *sv, char delim) {
     return result;
 }
 
-Nob_String_View nob_svfrom_parts(const char *data, size_t count) {
+Nob_String_View nob_sv_from_parts(const char *data, size_t count) {
     Nob_String_View sv;
     sv.count = count;
     sv.data = data;
     return sv;
 }
 
-Nob_String_View nob_svtrim_left(Nob_String_View sv) {
+Nob_String_View nob_sv_trim_left(Nob_String_View sv) {
     size_t i = 0;
     while (i < sv.count && isspace(sv.data[i])) {
         i += 1;
     }
-    return nob_svfrom_parts(sv.data + i, sv.count - i);
+    return nob_sv_from_parts(sv.data + i, sv.count - i);
 }
 
-Nob_String_View nob_svtrim_right(Nob_String_View sv) {
+Nob_String_View nob_sv_trim_right(Nob_String_View sv) {
     size_t i = 0;
     while (i < sv.count && isspace(sv.data[sv.count - 1 - i])) {
         i += 1;
     }
 
-    return nob_svfrom_parts(sv.data, sv.count - i);
+    return nob_sv_from_parts(sv.data, sv.count - i);
 }
 
-Nob_String_View nob_svtrim(Nob_String_View sv) {
-    return nob_svtrim_right(nob_svtrim_left(sv));
+Nob_String_View nob_sv_trim(Nob_String_View sv) {
+    return nob_sv_trim_right(nob_sv_trim_left(sv));
 }
 
-Nob_String_View nob_svfrom_cstr(const char *cstr) {
-    return nob_svfrom_parts(cstr, strlen(cstr));
+Nob_String_View nob_sv_from_cstr(const char *cstr) {
+    return nob_sv_from_parts(cstr, strlen(cstr));
 }
 
-bool nob_sveq(Nob_String_View a, Nob_String_View b) {
+bool nob_sv_eq(Nob_String_View a, Nob_String_View b) {
     if (a.count != b.count) {
         return false;
     } else {

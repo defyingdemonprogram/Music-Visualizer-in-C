@@ -206,13 +206,13 @@ bool build_musializer(const char *output_path, Config config) {
             cmd.count = 0;
             nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
             nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-            nob_cmd_append(&cmd, "-I./raylib/./raylib-5.0_win64_mingw-w64/include/");
+            nob_cmd_append(&cmd, "-I./raylib-5.0_win64_mingw-w64/include/");
             nob_cmd_append(&cmd, "-o", "./build/musializer");
             nob_cmd_append(&cmd, "./src/plug.c",
                                  "./src/separate_translation_unit_for_miniaudio.c",
                                  "./src/ffmpeg_windows.c",
                                  "./src/main.c");
-            nob_cmd_append(&cmd, "-L./raylib/./raylib-5.0_win64_mingw-w64/include/",
+            nob_cmd_append(&cmd, "-L./raylib-5.0_win64_mingw-w64/lib/",
                                  "-l:libraylib.a");
             nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
             nob_cmd_append(&cmd, "-static");

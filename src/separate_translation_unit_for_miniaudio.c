@@ -3,9 +3,9 @@
 #include <stdio.h>
 
 #include "separate_translation_unit_for_miniaudio.h"
-#ifndef _WIN32
-    #define MINIAUDIO_IMPLEMENTATION
-#endif // _WIN32
+// #ifndef _WIN32
+//     #define MINIAUDIO_IMPLEMENTATION
+// #endif // _WIN32
 #include "miniaudio.h"
 #include "raylib_log.h"
 

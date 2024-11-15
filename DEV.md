@@ -299,6 +299,35 @@ For Windows users, a common problem is the interaction between `miniaudio.h` and
 
 **Additional Resources**: For more in-depth information on using `miniaudio`, please refer to the [official documentation](https://miniaud.io/docs/manual/index.html) and the [official GitHub repository](https://github.com/mackron/miniaudio). These resources offer comprehensive guidance on library integration and common troubleshooting.
 
+### Build System Using C  
+**Branch**: `10-enhancement/build-with-c`
+
+In this branch, we implement a build system using **C** instead of relying on a shell script for the program.
+
+We primarily use `cc` (the C compiler) rather than `clang` to build **raylib** and **musializer**. The issue arises when using `clang` in the build process (specifically in `nob.c`), as an error is encountered in `./raylib/raylib-5.0/src/external/glfw/src/posix_poll.c` at line 49:
+
+```
+error: call to undeclared function 'ppoll'
+```
+
+This error was resolved by switching from `clang` to `cc`.  
+**Note**: The exact cause of the error is unclear, as changing the compiler affects the entire build process.
+
+### Difference Between `clang` and `cc`
+
+| **Aspect**             | **`clang`**                             | **`cc`**                                    |
+|------------------------|-----------------------------------------|---------------------------------------------|
+| **Type**               | Specific compiler (LLVM)                | Generic name for a C compiler               |
+| **Platform**           | Commonly used on macOS, but also available on Linux and other platforms | Available on Unix-like systems (e.g., Linux, macOS) |
+| **Default Compiler**   | Default on macOS, can be used independently on Linux | A symbolic link to the system’s default C compiler (e.g., `clang` or `gcc`) |
+| **Usage**              | Used explicitly for LLVM toolchain and features | A more generic command for invoking the system's default compiler |
+| **Error Messages**     | Known for detailed and user-friendly diagnostics | Error messages depend on the system's default compiler (either `clang` or `gcc`) |
+| **Performance**        | Generally faster with better optimizations, especially on macOS | Depends on the compiler it points to (e.g., `gcc` or `clang`) |
+| **Language Support**   | Supports C, C++, Objective-C, and other languages via LLVM | Primarily for C (but could invoke other compilers that support C++) |
+| **Main Focus**         | Optimized for modern C/C++ development, debugging, and diagnostics | Used for general-purpose C compilation |
+
+
+
 ### References:
 - [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
 - [Anti-aliasing - wikipedia](https://en.wikipedia.org/wiki/Anti-aliasing)

@@ -16,14 +16,14 @@ typedef enum {
 } Target;
 
 const char *target_names[] = {
-    [TARGET_POSIX] = "posix",
-    [TARGET_WIN32] = "win32"
+    [TARGET_POSIX]     = "posix",
+    [TARGET_WIN32]     = "win32",
 };
-static_assert(2==COUNT_TARGETS, "Amount of targets have changed");
+static_assert(2 == COUNT_TARGETS, "Amount of targets have changed");
 
 void log_available_targets(Nob_Log_Level level) {
     nob_log(level, "Available targets:");
-    for (size_t i=0; i < COUNT_TARGETS; ++i) {
+    for (size_t i = 0; i < COUNT_TARGETS; ++i) {
         nob_log(level, "    %s", target_names[i]);
     }
 }
@@ -77,7 +77,7 @@ bool parse_config_from_args(int argc, char **argv, Config *config) {
 
 void log_config(Config config) {
     nob_log(NOB_INFO, "Target: %s", NOB_ARRAY_GET(target_names, config.target));
-    nob_log(NOB_INFO, "Hotreload: %s", config.hotreload ? "ENABLED": "DISABLED");
+    nob_log(NOB_INFO, "Hotreload: %s", config.hotreload ? "ENABLED" : "DISABLED");
 }
 
 bool dump_config_to_file(const char *path, Config config) {
@@ -112,6 +112,7 @@ bool load_config_from_file(const char *path, Config *config) {
     for (size_t row = 0; content.count > 0; ++row) {
         Nob_String_View line = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
         if (line.count == 0) continue;
+
         Nob_String_View key = nob_sv_trim(nob_sv_chop_by_delim(&line, '='));
         Nob_String_View value = nob_sv_trim(line);
 
@@ -124,8 +125,7 @@ bool load_config_from_file(const char *path, Config *config) {
                 }
             }
             if (!found) {
-                nob_log(NOB_ERROR, "%s:%zu: Invalid target `"SV_Fmt"`", path, row 
-                + 1, SV_Arg(value));
+                nob_log(NOB_ERROR, "%s:%zu: Invalid target `"SV_Fmt"`", path, row + 1, SV_Arg(value));
                 log_available_targets(NOB_ERROR);
                 nob_return_defer(false);
             }
@@ -144,6 +144,7 @@ bool load_config_from_file(const char *path, Config *config) {
             nob_return_defer(false);
         }
     }
+
 defer:
     nob_sb_free(sb);
     return result;
@@ -156,43 +157,46 @@ bool build_musializer(const char *output_path, Config config) {
     switch (config.target) {
         case TARGET_POSIX: {
             if (config.hotreload) {
+                // TODO: build dynamic Raylib and link with it
+                nob_log(NOB_ERROR, "TODO: Hotreloading build for POSIX is temporarily disabled");
+                nob_return_defer(false);
+
                 cmd.count = 0;
-                nob_cmd_append(&cmd, "clang");
+                nob_cmd_append(&cmd, "cc");
                 nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-                nob_cmd_append(&cmd, "-I./build/");
+                nob_cmd_append(&cmd, "-I./raylib/raylib-5.0_linux_amd64/include/");
                 nob_cmd_append(&cmd, "-fPIC", "-shared");
                 nob_cmd_append(&cmd, "-o", "./build/libplug.so");
                 nob_cmd_append(&cmd, "./src/plug.c",
-                                      "./src/separate_translation_unit_for_miniaudio.c",
-                                      "./src/ffmpeg_linux.c");
-                nob_cmd_append(&cmd, "-L./build/");
-                nob_cmd_append(&cmd, "-lraylib", "-lm", "-ldl", "-lpthread");
+                                     "./src/separate_translation_unit_for_miniaudio.c",
+                                     "./src/ffmpeg_linux.c");
+                nob_cmd_append(&cmd, "-L./raylib/raylib-5.0_linux_amd64/lib/", "-l:libraylib.so");
+                nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
 
                 cmd.count = 0;
-
-                nob_cmd_append(&cmd, "clang");
+                nob_cmd_append(&cmd, "cc");
                 nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-                nob_cmd_append(&cmd, "-I./build/");
+                nob_cmd_append(&cmd, "-I./raylib/raylib-5.0_linux_amd64/include/");
                 nob_cmd_append(&cmd, "-DHOTRELOAD");
                 nob_cmd_append(&cmd, "-o", "./build/musializer");
-                nob_cmd_append(&cmd, "./src/plug.c",
-                                      "./src/separate_translation_unit_for_miniaudio.c",
-                                      "./src/ffmpeg_linux.c");
-                nob_cmd_append(&cmd, "-L./build/");
-                nob_cmd_append(&cmd, "-lraylib", "-lm", "-ldl", "-lpthread");
+                nob_cmd_append(&cmd, "./src/main.c",
+                                     "./src/hotreload_linux.c");
+                nob_cmd_append(&cmd, "-L./raylib/raylib-5.0_linux_amd64/lib/", "-l:libraylib.so");
+                nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
             } else {
-                nob_cmd_append(&cmd, "clang");
+                cmd.count = 0;
+                nob_cmd_append(&cmd, "cc");
                 nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-                nob_cmd_append(&cmd, "-I./build/");
+                nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
                 nob_cmd_append(&cmd, "-o", "./build/musializer");
                 nob_cmd_append(&cmd, "./src/plug.c",
-                                      "./src/separate_translation_unit_for_miniaudio.c",
-                                      "./src/ffmpeg_linux.c",
-                                      "./src/main.c");
-                nob_cmd_append(&cmd, "-L./build/");
-                nob_cmd_append(&cmd, "-lraylib", "-lm", "-ldl", "-lpthread");
+                                     "./src/separate_translation_unit_for_miniaudio.c",
+                                     "./src/ffmpeg_linux.c",
+                                     "./src/main.c");
+                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
+                nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
             }
         } break;
@@ -206,14 +210,13 @@ bool build_musializer(const char *output_path, Config config) {
             cmd.count = 0;
             nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
             nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-            nob_cmd_append(&cmd, "-I./raylib-5.0_win64_mingw-w64/include/");
+            nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
             nob_cmd_append(&cmd, "-o", "./build/musializer");
             nob_cmd_append(&cmd, "./src/plug.c",
                                  "./src/separate_translation_unit_for_miniaudio.c",
                                  "./src/ffmpeg_windows.c",
                                  "./src/main.c");
-            nob_cmd_append(&cmd, "-L./raylib-5.0_win64_mingw-w64/lib/",
-                                 "-l:libraylib.a");
+            nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
             nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
             nob_cmd_append(&cmd, "-static");
             if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
@@ -227,6 +230,90 @@ defer:
     return result;
 }
 
+static const char *raylib_modules[] = {
+    "rcore",
+    "raudio",
+    "rglfw",
+    "rmodels",
+    "rshapes",
+    "rtext",
+    "rtextures",
+    "utils",
+};
+
+bool build_raylib(Config config) {
+    bool result = true;
+    Nob_Cmd cmd = {0};
+
+    if (!nob_mkdir_if_not_exists("./build/raylib")) {
+        nob_return_defer(false);
+    }
+
+    Nob_Procs procs = {0};
+
+    const char *build_path = nob_temp_sprintf("./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target));
+
+    if (!nob_mkdir_if_not_exists(build_path)) {
+        nob_return_defer(false);
+    }
+
+    bool needs_rebuild = false;
+    for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
+        const char *input_path = nob_temp_sprintf("./raylib/raylib-5.0/src/%s.c", raylib_modules[i]);
+        const char *output_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
+
+        if (nob_needs_rebuild(input_path, output_path)) {
+            needs_rebuild = true;
+            cmd.count = 0;
+            switch (config.target) {
+                case TARGET_POSIX:
+                    nob_cmd_append(&cmd, "cc");
+                    break;
+                case TARGET_WIN32:
+                    nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
+                    break;
+                default: NOB_ASSERT(0 && "unreachable");
+            }
+            nob_cmd_append(&cmd, "-ggdb");
+            nob_cmd_append(&cmd, "-DPLATFORM_DESKTOP");
+            nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/external/glfw/include");
+            nob_cmd_append(&cmd, "-c", input_path);
+            nob_cmd_append(&cmd, "-o", output_path);
+
+            Nob_Proc proc = nob_cmd_run_async(cmd);
+            nob_da_append(&procs, proc);
+        }
+    }
+
+    if (needs_rebuild) {
+        bool success = true;
+        for (size_t i = 0; i < procs.count; ++i) {
+            success = success && nob_proc_wait(procs.items[i]);
+        }
+        if (!success) nob_return_defer(false);
+
+        cmd.count = 0;
+        nob_cmd_append(&cmd, "ar", "-crs", nob_temp_sprintf("%s/libraylib.a", build_path));
+        for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
+            const char *input_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
+            nob_cmd_append(&cmd, input_path);
+        }
+        if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+    }
+
+defer:
+    nob_cmd_free(cmd);
+    return result;
+}
+
+void log_available_subcommands(const char *program, Nob_Log_Level level) {
+    nob_log(level, "Usage: %s <subcommand>", program);
+    nob_log(level, "Subcommands:");
+    nob_log(level, "    build");
+    nob_log(level, "    config");
+    nob_log(level, "    logo");
+}
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
@@ -234,18 +321,13 @@ int main(int argc, char **argv) {
 
     if (argc <= 0) {
         nob_log(NOB_ERROR, "No subcommand is provided");
-        nob_log(NOB_ERROR, "Usage: %s <subcommand>", program);
-        nob_log(NOB_ERROR, "Subcommands:");
-        nob_log(NOB_ERROR, "    build");
-        nob_log(NOB_ERROR, "    config");
-        nob_log(NOB_ERROR, "    logo");
+        log_available_subcommands(program, NOB_ERROR);
         return 1;
     }
 
     const char *subcommand = nob_shift_args(&argc, &argv);
 
     if (strcmp(subcommand, "build") == 0) {
-
         Config config = {0};
         if (!load_config_from_file("./build/build.conf", &config)) {
             nob_log(NOB_ERROR, "You may want to probably call `%s config` first", program);
@@ -254,6 +336,7 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "------------------------------");
         log_config(config);
         nob_log(NOB_INFO, "------------------------------");
+        if (!build_raylib(config)) return 1;
         if (!build_musializer("./build/musializer", config)) return 1;
         if (config.target == TARGET_WIN32) {
             if (!nob_copy_file("musializer-logged.bat", "build/musializer-logged.bat")) return 1;
@@ -281,7 +364,9 @@ int main(int argc, char **argv) {
 
         nob_cmd_append(&cmd, "./resources/logo/logo-256.png");
         if (!nob_cmd_run_sync(cmd)) return 1;
+    } else {
+        nob_log(NOB_ERROR, "Unknown subcommand %s", subcommand);
+        log_available_subcommands(program, NOB_ERROR);
     }
-
     return 0;
 }

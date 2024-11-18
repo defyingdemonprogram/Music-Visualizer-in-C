@@ -157,6 +157,8 @@ bool build_musializer(const char *output_path, Config config) {
     switch (config.target) {
         case TARGET_POSIX: {
             if (config.hotreload) {
+                Nob_Procs procs = {0};
+
                 cmd.count = 0;
                 nob_cmd_append(&cmd, "cc");
                 nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
@@ -166,9 +168,11 @@ bool build_musializer(const char *output_path, Config config) {
                 nob_cmd_append(&cmd, "./src/plug.c",
                                      "./src/separate_translation_unit_for_miniaudio.c",
                                      "./src/ffmpeg_linux.c");
-                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.so");
+                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s",
+                       NOB_ARRAY_GET(target_names, config.target)), 
+                       "-l:libraylib.so");
                 nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
-                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                nob_da_append(&procs, nob_cmd_run_async(cmd));
 
                 cmd.count = 0;
                 nob_cmd_append(&cmd, "cc");
@@ -184,9 +188,13 @@ bool build_musializer(const char *output_path, Config config) {
                     nob_temp_sprintf("-Wl,-rpath=./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)),
                     // NOTE: just in case somebody wants to run musializer from within the ./build/ folder
                     nob_temp_sprintf("-Wl,-rpath=./raylib/%s", NOB_ARRAY_GET(target_names, config.target)));
-                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.so");
+                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s",
+                    NOB_ARRAY_GET(target_names, config.target)), 
+                    "-l:libraylib.so");
                 nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
-                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                nob_da_append(&procs, nob_cmd_run_async(cmd));
+
+                if (!nob_procs_wait(procs)) nob_return_defer(false);
             } else {
                 cmd.count = 0;
                 nob_cmd_append(&cmd, "cc");
@@ -197,7 +205,9 @@ bool build_musializer(const char *output_path, Config config) {
                                      "./src/separate_translation_unit_for_miniaudio.c",
                                      "./src/ffmpeg_linux.c",
                                      "./src/main.c");
-                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
+                nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s",
+                    NOB_ARRAY_GET(target_names, config.target)), 
+                    "-l:libraylib.a");
                 nob_cmd_append(&cmd, "-lm", "-ldl", "-lpthread");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
             }
@@ -289,11 +299,7 @@ bool build_raylib(Config config) {
     }
 
     
-    bool success = true;
-    for (size_t i = 0; i < procs.count; ++i) {
-        success = nob_proc_wait(procs.items[i]) && success;
-    }
-    if (!success) nob_return_defer(false);
+    if (!nob_procs_wait(procs)) nob_return_defer(false);
 
     if (needs_rebuild) {
         if (!config.hotreload) {
@@ -373,6 +379,8 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "------------------------------");
         if (!dump_config_to_file("./build/build.conf", config)) return 1;
     } else if (strcmp(subcommand, "logo") == 0) {
+        Nob_Procs procs = {0};
+
         Nob_Cmd cmd = {0};
         nob_cmd_append(&cmd, "convert");
         nob_cmd_append(&cmd, "-background", "None");
@@ -380,12 +388,14 @@ int main(int argc, char **argv) {
         nob_cmd_append(&cmd, "-resize", "256");
 
         nob_cmd_append(&cmd, "./resources/logo/logo-256.ico");
-        if (!nob_cmd_run_sync(cmd)) return 1;
+        nob_da_append(&procs, nob_cmd_run_async(cmd));
 
         cmd.count -= 1;
 
         nob_cmd_append(&cmd, "./resources/logo/logo-256.png");
-        if (!nob_cmd_run_sync(cmd)) return 1;
+        nob_da_append(&procs, nob_cmd_run_async(cmd));
+
+        if (!nob_procs_wait(procs)) return 1;
     } else {
         nob_log(NOB_ERROR, "Unknown subcommand %s", subcommand);
         log_available_subcommands(program, NOB_ERROR);

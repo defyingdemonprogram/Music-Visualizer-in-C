@@ -197,6 +197,7 @@ void nob_temp_rewind(size_t checkpoint);
 
 int is_input_path_modified_after_output_path(const char *input_path, const char *output_path);
 bool nob_rename(const char *old_path, const char *new_path);
+int nob_needs_rebuild(const char *output_path, const char *input_path);
 
 // TODO: add MinGW support for Go Rebuild Urself™ Technology
 #ifndef NOB_REBUILD_URSELF
@@ -241,7 +242,7 @@ bool nob_rename(const char *old_path, const char *new_path);
         assert(argc >= 1);                                                                   \
         const char *binary_path = argv[0];                                                   \
                                                                                              \
-        int rebuild_is_needed = nob_needs_rebuild(source_path, binary_path);                 \
+        int rebuild_is_needed = nob_needs_rebuild(binary_path, source_path);                 \
         if (rebuild_is_needed < 0) exit(1);                                                  \
         if (rebuild_is_needed) {                                                             \
             Nob_String_Builder sb = {0};                                                     \
@@ -774,7 +775,7 @@ void nob_temp_rewind(size_t checkpoint) {
     nob_temp_size = checkpoint;
 }
 
-int nob_needs_rebuild(const char *input_path, const char *output_path) {
+int nob_needs_rebuild(const char *output_path, const char *input_path) {
 #ifdef _WIN32
     FILETIME input_path_time, output_path_time;
 

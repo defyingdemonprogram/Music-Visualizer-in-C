@@ -55,11 +55,13 @@ dkms.conf
 *.mp4
 *.mp3
 fft
-build/*
 foo.c
 raylib-5.0_win64_mingw-w64/*
 ffmpeg.exe
+./raylib/raylib-5.0.tar.gz
+
+# Nob artifacts
+build/
 nob
 nob.exe
 nob.old
-./raylib/raylib-5.0.tar.gz

@@ -407,6 +407,7 @@ defer:
 void nob_cmd_render(Nob_Cmd cmd, Nob_String_Builder *render) {
     for (size_t i = 0; i < cmd.count; ++i) {
         const char *arg = cmd.items[i];
+        if (arg == NULL) break;
         if (i > 0) nob_sb_append_cstr(render, " ");
         if (!strchr(arg, ' ')) {
             nob_sb_append_cstr(render, arg);
@@ -432,13 +433,15 @@ void nob_cmd_append_null(Nob_Cmd *cmd, ...) {
 }
 
 Nob_Proc nob_cmd_run_async(Nob_Cmd cmd) {
-    {    
-        Nob_String_Builder sb = {0};
-        nob_cmd_render(cmd, &sb);
-        nob_sb_append_null(&sb);
-        nob_log(NOB_INFO, "CMD: %s", sb.items);
-        nob_sb_free(sb);
+    if (cmd.count < 1) {
+        nob_log(NOB_ERROR, "Couldnot run empty command");
+        return NOB_INVALID_PROC;
     }
+    Nob_String_Builder sb = {0};
+    nob_cmd_render(cmd, &sb);
+    nob_sb_append_null(&sb);
+    nob_log(NOB_INFO, "CMD: %s", sb.items);
+    nob_sb_free(sb);
 
 #ifdef _WIN32
     // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
@@ -457,7 +460,7 @@ Nob_Proc nob_cmd_run_async(Nob_Cmd cmd) {
     PROCESS_INFORMATION piProcInfo;
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
-    Nob_String_Builder sb = {0};
+    sb.count = 0;
     nob_cmd_render(cmd, &sb);
     nob_sb_append_null(&sb);
     BOOL bSuccess = CreateProcess(NULL, sb.items, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);

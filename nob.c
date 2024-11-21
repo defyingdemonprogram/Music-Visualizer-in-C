@@ -156,11 +156,12 @@ defer:
 bool build_musializer(Config config) {
     bool result = true;
     Nob_Cmd cmd = {0};
+    Nob_Procs procs = {0};
 
     switch (config.target) {
         case TARGET_POSIX: {
             if (config.hotreload) {
-                Nob_Procs procs = {0};
+                procs.count = 0;
 
                 cmd.count = 0;
                 nob_cmd_append(&cmd, "cc");
@@ -220,21 +221,31 @@ bool build_musializer(Config config) {
             if (config.hotreload) {
                 nob_log(NOB_ERROR, "TODO: hotreloading is not supported on Windows yet");
                 return false;
-            }
+            } else {
+                // TODO: Compile musializer.res for Win32 target
+                cmd.count = 0;
+                    nob_cmd_append(&cmd, "x86_64-w64-mingw32-windres");
+                    nob_cmd_append(&cmd, "./src/musializer.rc");
+                    nob_cmd_append(&cmd, "-O", "coff");
+                    nob_cmd_append(&cmd, "-o", "./build/musializer.res");
+                    nob_cmd_append(&cmd, NULL);
+                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
 
-            cmd.count = 0;
-            nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
-            nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
-            nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
-            nob_cmd_append(&cmd, "-o", "./build/musializer");
-            nob_cmd_append(&cmd, "./src/plug.c",
-                                 "./src/separate_translation_unit_for_miniaudio.c",
-                                 "./src/ffmpeg_windows.c",
-                                 "./src/main.c");
-            nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
-            nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
-            nob_cmd_append(&cmd, "-static");
-            if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                cmd.count = 0;
+                    nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
+                    nob_cmd_append(&cmd, "-Wall", "-Wextra", "-ggdb");
+                    nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
+                    nob_cmd_append(&cmd, "-o", "./build/musializer");
+                    nob_cmd_append(&cmd, "./src/plug.c",
+                                        "./src/separate_translation_unit_for_miniaudio.c",
+                                        "./src/ffmpeg_windows.c",
+                                        "./src/main.c",
+                                        "./build/musializer.res");
+                    nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
+                    nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
+                    nob_cmd_append(&cmd, "-static");
+                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+            }
         } break;
 
         default: NOB_ASSERT(0 && "unreachable");
@@ -242,6 +253,7 @@ bool build_musializer(Config config) {
 
 defer:
     nob_cmd_free(cmd);
+    nob_da_free(procs);
     return result;
 }
 

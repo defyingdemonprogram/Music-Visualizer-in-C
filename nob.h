@@ -133,11 +133,10 @@ bool nob_read_entire_file(const char* path, Nob_String_Builder *sb);
 // Process handle
 #ifdef _WIN32
 typedef HANDLE Nob_Proc;
-#define NOB_INVALID_PROC NULL
 #else
 typedef int Nob_Proc;
-#define NOB_INVALID_PROC -1
 #endif // _WIN32
+#define NOB_INVALID_PROC -1
 
 typedef struct {
     Nob_Proc *items;
@@ -164,7 +163,7 @@ void nob_cmd_render(Nob_Cmd cmd, Nob_String_Builder *render);
 
 // Wrapper around nob_cmd_append_null that does not require NULL at the end.
 #define nob_cmd_append(cmd, ...) \
-    nob_da_append_many(cmd, ((const char*[]){__VA_ARGS__}), (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*))))
+    nob_da_append_many(cmd, ((const char*[]){__VA_ARGS__}), (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)))
 
 Nob_Cmd nob_cmd_inline_null(void *first, ...);
 #define nob_cmd_inline(...) nob_cmd_inline_null(NULL, __VA_ARGS__, NULL)
@@ -465,7 +464,13 @@ Nob_Proc nob_cmd_run_async(Nob_Cmd cmd) {
     }
 
     if (cpid == 0) {
-        if (execvp(cmd.items[0], (char * const*) cmd.items) < 0) {
+        // NOTE: This leaks a bit of memory in the child process.
+        // But do we actually care? It's a one off leak anyone ....
+        Nob_Cmd cmd_null = {0};
+        nob_da_append_many(&cmd_null, cmd.items, cmd.count);
+        nob_cmd_append(&cmd_null, NULL);
+
+        if (execvp(cmd.items[0], (char * const*) cmd_null.items) < 0) {
             nob_log(NOB_ERROR, "Could not exec child process: %s", strerror(errno));
             exit(1);
         }

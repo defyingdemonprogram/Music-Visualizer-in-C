@@ -220,15 +220,13 @@ bool build_musializer(Config config) {
         case TARGET_WIN32: {
             if (config.hotreload) {
                 nob_log(NOB_ERROR, "TODO: hotreloading is not supported on Windows yet");
-                return false;
+                nob_return_defer(false);
             } else {
-                // TODO: Compile musializer.res for Win32 target
                 cmd.count = 0;
                     nob_cmd_append(&cmd, "x86_64-w64-mingw32-windres");
                     nob_cmd_append(&cmd, "./src/musializer.rc");
                     nob_cmd_append(&cmd, "-O", "coff");
                     nob_cmd_append(&cmd, "-o", "./build/musializer.res");
-                    nob_cmd_append(&cmd, NULL);
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
 
                 cmd.count = 0;

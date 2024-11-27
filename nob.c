@@ -11,16 +11,16 @@
 
 typedef enum {
     TARGET_POSIX,
-    TARGET_WIN32_MINGW,
-    TARGET_WIN32_MSVC,
+    TARGET_WIN64_MINGW,
+    TARGET_WIN64_MSVC,
     COUNT_TARGETS
 } Target;
 
 static_assert(3 == COUNT_TARGETS, "Amount of targets have changed");
 const char *target_names[] = {
     [TARGET_POSIX]       = "posix",
-    [TARGET_WIN32_MINGW] = "win32-mingw",
-    [TARGET_WIN32_MSVC]  = "win32-msvc",
+    [TARGET_WIN64_MINGW] = "win64-mingw",
+    [TARGET_WIN64_MSVC]  = "win64-msvc",
 };
 
 void log_available_targets(Nob_Log_Level level) {
@@ -40,9 +40,9 @@ bool parse_config_from_args(int argc, char **argv, Config *config) {
     memset(config, 0, sizeof(Config));
 #ifdef _WIN32
 #   if defined(_MSC_VER)
-        config->target = TARGET_WIN32_MSVC;
+        config->target = TARGET_WIN64_MSVC;
 #   else
-        config->target = TARGET_WIN32_MINGW;
+        config->target = TARGET_WIN64_MINGW;
 #   endif // _MSC_VER
 #else
     config->target = TARGET_POSIX;
@@ -223,7 +223,7 @@ bool build_musializer(Config config) {
             }
         } break;
 
-        case TARGET_WIN32_MINGW: {
+        case TARGET_WIN64_MINGW: {
             if (config.hotreload) {
                 nob_log(NOB_ERROR, "TODO: hotreloading is not supported on Windows %s yet", NOB_ARRAY_GET(target_names, config.target));
                 nob_return_defer(false);
@@ -252,7 +252,7 @@ bool build_musializer(Config config) {
             }
         } break;
 
-        case TARGET_WIN32_MSVC: {
+        case TARGET_WIN64_MSVC: {
             if (config.hotreload) {
                 nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", NOB_ARRAY_GET(target_names, config.target));
                 nob_return_defer(false);
@@ -266,7 +266,7 @@ bool build_musializer(Config config) {
                         "./src/plug.c",
                         "./src/separate_translation_unit_for_miniaudio.c",
                         "./src/ffmpeg_windows.c"
-                        // TODO: building resource file is not implemented for TARGET_WIN32_MSVC
+                        // TODO: building resource file is not implemented for TARGET_WIN64_MSVC
                         //"./build/musializer.res"
                         );
                     nob_cmd_append(&cmd,
@@ -322,7 +322,7 @@ bool build_raylib(Config config) {
 
         switch (config.target){
             case TARGET_POSIX:
-            case TARGET_WIN32_MINGW:
+            case TARGET_WIN64_MINGW:
                 output_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
                 break;
             default: NOB_ASSERT(0 && "unreachable");
@@ -340,14 +340,14 @@ bool build_raylib(Config config) {
                     nob_cmd_append(&cmd, "-c", input_path);
                     nob_cmd_append(&cmd, "-o", output_path);
                     break;
-                case TARGET_WIN32_MINGW:
+                case TARGET_WIN64_MINGW:
                     nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");       
                     nob_cmd_append(&cmd, "-ggdb", "-DPLATFORM_DESKTOP", "-fPIC");
                     nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/external/glfw/include");
                     nob_cmd_append(&cmd, "-c", input_path);
                     nob_cmd_append(&cmd, "-o", output_path);
                     break;
-                case TARGET_WIN32_MSVC:
+                case TARGET_WIN64_MSVC:
                     nob_cmd_append(&cmd, "cl.exe", "/DPLATFORM_DESKTOP");
                     nob_cmd_append(&cmd, "/I", "./raylib/raylib-5.0/src/external/glfw/");
                     nob_cmd_append(&cmd, "/c", input_path);
@@ -366,7 +366,7 @@ bool build_raylib(Config config) {
     
     switch (config.target) {
         case TARGET_POSIX:
-        case TARGET_WIN32_MINGW: {
+        case TARGET_WIN64_MINGW: {
             if (!config.hotreload) {
                 const char *libraylib_path = nob_temp_sprintf("%s/libraylib.a", build_path);
 
@@ -400,7 +400,7 @@ bool build_raylib(Config config) {
             }
         } break;
 
-        case TARGET_WIN32_MSVC: {
+        case TARGET_WIN64_MSVC: {
             if (!config.hotreload) {
                 const char *libraylib_path = nob_temp_sprintf("%s/raylib.lib", build_path);
                 if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
@@ -459,7 +459,7 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "------------------------------");
         if (!build_raylib(config)) return 1;
         if (!build_musializer(config)) return 1;
-        if (config.target == TARGET_WIN32_MINGW || config.target == TARGET_WIN32_MSVC) {
+        if (config.target == TARGET_WIN64_MINGW || config.target == TARGET_WIN64_MSVC) {
             if (!nob_copy_file("musializer-logged.bat", "build/musializer-logged.bat")) return 1;
         }
         if (!nob_copy_directory_recursively("./resources/", "./build/resources/")) return 1;

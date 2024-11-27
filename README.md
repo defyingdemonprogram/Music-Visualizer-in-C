@@ -123,7 +123,7 @@ export LD_LIBRARY_PATH=./build/
 ./build/musializer
 ```
 
-This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to [build.sh](./build.sh).
+This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to [build_posix_clang.sh](./build_posix_clang.sh).
 
 - Press <kbd>Q</kbd> or <kbd>ESC</kbd> to exit the program.
 - Press <kbd>R</kbd> to hot reload any changes made to the plugin code while Musializer is running.

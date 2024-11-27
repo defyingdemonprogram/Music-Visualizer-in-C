@@ -327,6 +327,24 @@ This error was resolved by switching from `clang` to `cc`.
 | **Main Focus**         | Optimized for modern C/C++ development, debugging, and diagnostics | Used for general-purpose C compilation |
 
 
+#### Comparison of **MinGW** and **MSVC GCC** compilers
+
+| **Aspect**                | **MinGW (GCC)**                                    | **MSVC (Microsoft Visual C++)**                     |
+|---------------------------|----------------------------------------------------|-----------------------------------------------------|
+| **Compiler**              | GNU Compiler Collection (GCC)                     | Microsoft Visual C++ Compiler                       |
+| **Platform**              | Cross-platform, but focused on Windows for MinGW   | Windows-only                                        |
+| **Toolchain**             | GNU Binutils, GCC, and GNU Standard Library (libc) | Microsoft’s proprietary toolchain (MSVC CRT)        |
+| **Target**                | Produces Windows executables with a focus on compatibility with the Windows API | Primarily Windows executables optimized for Windows environments |
+| **Standard Library**      | GNU C Library (glibc) or Newlib                    | Microsoft C Runtime Library (CRT)                   |
+| **ABI (Application Binary Interface)** | Follows the **Microsoft ABI** (Binary Interface), but with GCC-style calling conventions | Uses its own **Microsoft ABI**, which is Windows-specific |
+| **Compatibility**         | Compatible with Windows API, but may lack full integration with Windows-specific libraries like MFC or DirectX | Fully compatible with Windows libraries, COM, MFC, and other Windows-specific frameworks |
+| **Code Generation**       | Typically produces more portable code for cross-platform development | Optimized for Windows performance and integration |
+| **Platform Integration**  | Minimal integration with Windows-specific APIs; better for UNIX-like environments | Deep integration with Windows OS, APIs, and technologies |
+| **Linking**               | Uses GNU linker (ld)                              | Uses Microsoft's linker (link.exe)                  |
+| **Windows Features**      | Limited support for advanced Windows features (like DirectX, MFC) | Full support for Windows-specific technologies, including MFC, COM, and DirectX |
+| **Debugging Support**     | Supports debugging through GDB (GNU Debugger)     | Deep debugging support through Visual Studio Debugger |
+| **IDE Integration**       | Typically used with lightweight editors (e.g., VS Code, Sublime Text) or through command line | Full integration with Microsoft Visual Studio IDE |
+| **Optimizations**         | Focuses on general performance and cross-platform optimization | Advanced Windows-specific optimizations (e.g., for threading, performance on Windows) |
 
 ### References:
 - [FFMPEG official documentation - ffmpeg documentation](https://ffmpeg.org/documentation.html)
@@ -339,3 +357,4 @@ This error was resolved by switching from `clang` to `cc`.
 - [Wine -- Official Website](https://www.winehq.org/)
 - [MINIAUDIO Official Documentation](https://miniaud.io/docs/manual/index.html)
 - [MINIAUDIO Official GitHub](https://github.com/mackron/miniaudio)
+- [MinGW vs MSVC -- wiki](https://wiki.strawberrymusicplayer.org/wiki/MinGW_vs_MSVC)

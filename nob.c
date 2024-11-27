@@ -11,15 +11,17 @@
 
 typedef enum {
     TARGET_POSIX,
-    TARGET_WIN32,
+    TARGET_WIN32_MINGW,
+    TARGET_WIN32_MSVC,
     COUNT_TARGETS
 } Target;
 
+static_assert(3 == COUNT_TARGETS, "Amount of targets have changed");
 const char *target_names[] = {
-    [TARGET_POSIX]     = "posix",
-    [TARGET_WIN32]     = "win32",
+    [TARGET_POSIX]       = "posix",
+    [TARGET_WIN32_MINGW] = "win32-mingw",
+    [TARGET_WIN32_MSVC]  = "win32-msvc",
 };
-static_assert(2 == COUNT_TARGETS, "Amount of targets have changed");
 
 void log_available_targets(Nob_Log_Level level) {
     nob_log(level, "Available targets:");
@@ -37,10 +39,14 @@ typedef struct {
 bool parse_config_from_args(int argc, char **argv, Config *config) {
     memset(config, 0, sizeof(Config));
 #ifdef _WIN32
-    config->target = TARGET_WIN32;
+#   if defined(_MSC_VER)
+        config->target = TARGET_WIN32_MSVC;
+#   else
+        config->target = TARGET_WIN32_MINGW;
+#   endif // _MSC_VER
 #else
     config->target = TARGET_POSIX;
-#endif
+#endif // _WIN32
 
     while (argc > 0) {
         const char *flag = nob_shift_args(&argc, &argv);
@@ -217,9 +223,9 @@ bool build_musializer(Config config) {
             }
         } break;
 
-        case TARGET_WIN32: {
+        case TARGET_WIN32_MINGW: {
             if (config.hotreload) {
-                nob_log(NOB_ERROR, "TODO: hotreloading is not supported on Windows yet");
+                nob_log(NOB_ERROR, "TODO: hotreloading is not supported on Windows %s yet", NOB_ARRAY_GET(target_names, config.target));
                 nob_return_defer(false);
             } else {
                 cmd.count = 0;
@@ -242,6 +248,33 @@ bool build_musializer(Config config) {
                     nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)), "-l:libraylib.a");
                     nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
                     nob_cmd_append(&cmd, "-static");
+                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+            }
+        } break;
+
+        case TARGET_WIN32_MSVC: {
+            if (config.hotreload) {
+                nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", NOB_ARRAY_GET(target_names, config.target));
+                nob_return_defer(false);
+            } else {
+                cmd.count = 0;
+                    nob_cmd_append(&cmd, "cl.exe");
+                    nob_cmd_append(&cmd, "/I", "./raylib/raylib-5.0/src/");
+                    nob_cmd_append(&cmd, "/Fobuild\\", "/Febuild\\musializer.exe");
+                    nob_cmd_append(&cmd,
+                        "./src/main.c",
+                        "./src/plug.c",
+                        "./src/separate_translation_unit_for_miniaudio.c",
+                        "./src/ffmpeg_windows.c"
+                        // TODO: building resource file is not implemented for TARGET_WIN32_MSVC
+                        //"./build/musializer.res"
+                        );
+                    nob_cmd_append(&cmd,
+                        "/link",
+                        nob_temp_sprintf("/LIBPATH:build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)),
+                        "raylib.lib");
+                    nob_cmd_append(&cmd, "Winmm.lib", "gdi32.lib", "User32.lib", "Shell32.lib");
+                    //nob_cmd_append(&cmd, "-static");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
             }
         } break;
@@ -287,6 +320,14 @@ bool build_raylib(Config config) {
         const char *input_path = nob_temp_sprintf("./raylib/raylib-5.0/src/%s.c", raylib_modules[i]);
         const char *output_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
 
+        switch (config.target){
+            case TARGET_POSIX:
+            case TARGET_WIN32_MINGW:
+                output_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
+                break;
+            default: NOB_ASSERT(0 && "unreachable");
+        }
+
         nob_da_append(&object_files, output_path);
 
         if (nob_needs_rebuild(output_path, &input_path, 1)) {
@@ -294,58 +335,90 @@ bool build_raylib(Config config) {
             switch (config.target) {
                 case TARGET_POSIX:
                     nob_cmd_append(&cmd, "cc");
+                    nob_cmd_append(&cmd, "-ggdb", "-DPLATFORM_DESKTOP", "-fPIC");
+                    nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/external/glfw/include");
+                    nob_cmd_append(&cmd, "-c", input_path);
+                    nob_cmd_append(&cmd, "-o", output_path);
                     break;
-                case TARGET_WIN32:
-                    nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");
+                case TARGET_WIN32_MINGW:
+                    nob_cmd_append(&cmd, "x86_64-w64-mingw32-gcc");       
+                    nob_cmd_append(&cmd, "-ggdb", "-DPLATFORM_DESKTOP", "-fPIC");
+                    nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/external/glfw/include");
+                    nob_cmd_append(&cmd, "-c", input_path);
+                    nob_cmd_append(&cmd, "-o", output_path);
+                    break;
+                case TARGET_WIN32_MSVC:
+                    nob_cmd_append(&cmd, "cl.exe", "/DPLATFORM_DESKTOP");
+                    nob_cmd_append(&cmd, "/I", "./raylib/raylib-5.0/src/external/glfw/");
+                    nob_cmd_append(&cmd, "/c", input_path);
+                    nob_cmd_append(&cmd, nob_temp_sprintf("/Fo%s", output_path));
                     break;
                 default: NOB_ASSERT(0 && "unreachable");
             }
-            nob_cmd_append(&cmd, "-ggdb");
-            nob_cmd_append(&cmd, "-DPLATFORM_DESKTOP");
-            nob_cmd_append(&cmd, "-fPIC");
-            nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/external/glfw/include");
-            nob_cmd_append(&cmd, "-c", input_path);
-            nob_cmd_append(&cmd, "-o", output_path);
 
             Nob_Proc proc = nob_cmd_run_async(cmd);
             nob_da_append(&procs, proc);
         }
     }
-
+    cmd.count = 0;
     
     if (!nob_procs_wait(procs)) nob_return_defer(false);
+    
+    switch (config.target) {
+        case TARGET_POSIX:
+        case TARGET_WIN32_MINGW: {
+            if (!config.hotreload) {
+                const char *libraylib_path = nob_temp_sprintf("%s/libraylib.a", build_path);
 
-    if (!config.hotreload) {
-        const char *libraylib_path = nob_temp_sprintf("%s/libraylib.a", build_path);
+                if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
+                    nob_cmd_append(&cmd, "ar", "-crs", libraylib_path);
 
-        if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
-            cmd.count = 0;
-            nob_cmd_append(&cmd, "ar", "-crs", libraylib_path);
-            for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
-                const char *input_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
-                nob_cmd_append(&cmd, input_path);
-            }
-            if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
-        }
-    } else {
-        const char *libraylib_path = nob_temp_sprintf("%s/libraylib.so", build_path);
-
-        if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
-            cmd.count = 0;
-            if (config.target == TARGET_POSIX) {
-                nob_cmd_append(&cmd, "clang");
+                    for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
+                        const char *input_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
+                        nob_cmd_append(&cmd, input_path);
+                    }
+                    if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                }
             } else {
-                nob_log(NOB_ERROR, "TODO: hotreload for windows is not supported yet");
+                const char *libraylib_path = nob_temp_sprintf("%s/libraylib.so", build_path);
+
+                if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
+                    if (config.target == TARGET_POSIX) {
+                        nob_cmd_append(&cmd, "clang");
+                    } else {
+                        nob_log(NOB_ERROR, "TODO: dynamic raylib for %s is not supported yet", NOB_ARRAY_GET(target_names, config.target));
+                        nob_return_defer(false);
+                    }
+                    nob_cmd_append(&cmd, "-shared");
+                    nob_cmd_append(&cmd, "-o", libraylib_path);
+                    for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
+                        const char *input_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
+                        nob_cmd_append(&cmd, input_path);
+                    }
+                    if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                }
+            }
+        } break;
+
+        case TARGET_WIN32_MSVC: {
+            if (!config.hotreload) {
+                const char *libraylib_path = nob_temp_sprintf("%s/raylib.lib", build_path);
+                if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
+                    nob_cmd_append(&cmd, "lib");
+                    for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
+                        const char *input_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
+                        nob_cmd_append(&cmd, input_path);
+                    }
+                    nob_cmd_append(&cmd, nob_temp_sprintf("/OUT:%s", libraylib_path));
+                    if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                }
+            } else {
+                nob_log(NOB_WARNING, "TODO: dynamic raylib for %s is not supported yet", NOB_ARRAY_GET(target_names, config.target));
                 nob_return_defer(false);
             }
-            nob_cmd_append(&cmd, "-shared");
-            nob_cmd_append(&cmd, "-o", libraylib_path);
-            for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
-                const char *input_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
-                nob_cmd_append(&cmd, input_path);
-            }
-            if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
-        }
+        } break;
+
+        default: NOB_ASSERT(0 && "unreachable");
     }
 
 defer:
@@ -386,7 +459,7 @@ int main(int argc, char **argv) {
         nob_log(NOB_INFO, "------------------------------");
         if (!build_raylib(config)) return 1;
         if (!build_musializer(config)) return 1;
-        if (config.target == TARGET_WIN32) {
+        if (config.target == TARGET_WIN32_MINGW || config.target == TARGET_WIN32_MSVC) {
             if (!nob_copy_file("musializer-logged.bat", "build/musializer-logged.bat")) return 1;
         }
         if (!nob_copy_directory_recursively("./resources/", "./build/resources/")) return 1;

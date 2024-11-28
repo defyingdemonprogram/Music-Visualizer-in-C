@@ -323,6 +323,9 @@ bool build_raylib(Config config) {
         switch (config.target){
             case TARGET_POSIX:
             case TARGET_WIN64_MINGW:
+                output_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
+                break;
+            case TARGET_WIN64_MSVC:
                 output_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
                 break;
             default: NOB_ASSERT(0 && "unreachable");

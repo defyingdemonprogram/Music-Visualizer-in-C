@@ -44,14 +44,15 @@ Windows support is at very early stage right now. Since I don't have a convenien
 
    To configure the build settings, run:
    ```bash
-   ./nob config -t posix -h
+   ./nob config -t posix -r
    ```
    - The `-t` flag specifies the target platform for compilation. The available options are:
      - `posix`
-     - `win32`
-   - The `-h` flag enables hot reloading during the compilation of the Musializer app.
+     - `win64-mingw`
+     - `win64-msvc`
+   - The `-r` flag enables hot reloading during the compilation of the Musializer app.
 
-   Configuration settings are stored in the `./build/build.conf` file. You can also modify the configuration directly in this file.
+   Configuration settings are stored in the `./build/build.conf` file. You can also modify the configuration directly in this file. You may see the help for the application using `./nob config -h`
 
 3. **Build and Run the Program:**
 

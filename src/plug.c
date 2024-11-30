@@ -70,7 +70,7 @@ typedef struct {
 } Plug;
 
 
-Plug* p = NULL;
+Plug *p = NULL;
 
 bool fft_settled(void) {
     float eps = 1e-3;
@@ -102,9 +102,9 @@ void fft(float in[], size_t stride, Float_Complex out[], size_t n) {
 
     for (size_t k = 0; k < n / 2; ++k) {
         float t = (float)k / n;
-        Float_Complex v = mulcc(cexpf(cfromimag(-2 * PI * t)), out[k + n / 2]);
+        Float_Complex v = mulcc(cexpf(cfromimag(-2  *PI * t)), out[k + n / 2]);
         Float_Complex e = out[k];
-        out[k]          = e+v;//addcc(e, v);
+        out[k]          = addcc(e, v);
         out[k + n / 2]  = subcc(e, v);
     }
 }
@@ -119,13 +119,13 @@ static inline float amp(Float_Complex z) {
 size_t fft_analyze(float dt) {
     for (size_t i = 0; i < N; ++i) {
         float t = (float)i / (N - 1);
-        float hann = 0.5 - 0.5 * cosf(2 * PI * t);
+        float hann = 0.5 - 0.5 * cosf(2 *PI * t);
         p->in_win[i] = p->in_raw[i] * hann;
     }
 
     fft(p->in_win, 1, p->out_raw, N);
     
-    // Logarithmic Scale
+    // "Squash" into the Logarithmic Scale
     float step = 1.06;
     float lowf = 1.0f;
     size_t m = 0;
@@ -142,7 +142,7 @@ size_t fft_analyze(float dt) {
         p->out_log[m++] = a;
     }
 
-    // Normalize Frequencies
+    // Normalize Frequencies to 0..1 range
     for (size_t i = 0; i < m; ++i) {
         p->out_log[i] /= max_amp;
     }
@@ -159,7 +159,10 @@ size_t fft_analyze(float dt) {
 
 // FFT Rendering
 void fft_render(size_t w, size_t h, size_t m) {
+    // The width of a single bar
     float cell_width = (float)w / m;
+
+    // Global color parameters
     float saturation = 0.75f;
     float value = 1.0f;
 
@@ -190,11 +193,21 @@ void fft_render(size_t w, size_t h, size_t m) {
         Vector2 origin = {0};
         
         if (endPos.y >= startPos.y) {
-            Rectangle dest = {.x = startPos.x - radius / 2, .y = startPos.y, .width = radius, .height = endPos.y - startPos.y};
+            Rectangle dest = {
+                .x = startPos.x - radius / 2, 
+                .y = startPos.y, 
+                .width = radius, 
+                .height = endPos.y - startPos.y
+            };
             Rectangle source = {0, 0, 1, 0.5};
             DrawTexturePro(texture, source, dest, origin, 0, color);
         } else {
-            Rectangle dest = {.x = endPos.x - radius / 2, .y = endPos.y, .width = radius, .height = startPos.y - endPos.y};
+            Rectangle dest = {
+                .x = endPos.x - radius / 2, 
+                .y = endPos.y, 
+                .width = radius, 
+                .height = startPos.y - endPos.y
+            };
             Rectangle source = {0, 0.5, 1, 0.5};
             DrawTexturePro(texture, source, dest, origin, 0, color);
         }
@@ -225,6 +238,7 @@ void fft_push(float frame) {
 
 // Audio Callback
 void callback(void* bufferData, unsigned int frames) {
+    // https://cdecl.org/?q=float+%28*fs%29%5B2%5D
     float(*fs)[2] = bufferData; // Treating music as 2 channels
     for (size_t i = 0; i < frames; ++i) {
         fft_push(fs[i][0]);
@@ -245,7 +259,7 @@ void plug_init() {
 }
 
 // Pre-reload Function
-Plug* plug_pre_reload(void) {
+Plug *plug_pre_reload(void) {
     if (IsMusicReady(p->music)) {
         DetachAudioStreamProcessor(p->music.stream, callback);
     }
@@ -253,7 +267,7 @@ Plug* plug_pre_reload(void) {
 }
 
 // Post-reload Function
-void plug_post_reload(Plug* prev) {
+void plug_post_reload(Plug *prev) {
     p = prev;
     if (IsMusicReady(p->music)) {
         AttachAudioStreamProcessor(p->music.stream, callback);
@@ -335,6 +349,7 @@ void plug_update(void) {
                 UnloadDroppedFiles(droppedFiles);
             }
             if (IsKeyPressed(KEY_M)) {
+                // TODO: let the user choose their mic
                 p->microphone = init_default_capture_device(callback);
                 if (p->microphone != NULL) {
                     if (!start_capture_device(p->microphone)) {
@@ -365,6 +380,7 @@ void plug_update(void) {
                     StopMusicStream(p->music);
 
                     fft_clean();
+                    // TODO: LoadWave is pretty slow on big files
                     p->wave = LoadWave(p->file_path);
                     p->wave_cursor = 0;
                     p->wave_samples = LoadWaveSamples(p->wave);
@@ -376,7 +392,7 @@ void plug_update(void) {
                 size_t m = fft_analyze(GetFrameTime());
                 fft_render(GetRenderWidth(), GetRenderHeight(), m);
             } else { // We are waiting for the user to Drag&Drop the Music
-                const char* label;
+                const char *label;
                 Color color;
                 if (p->error) {
                     label = "Could not load file";
@@ -413,12 +429,12 @@ void plug_update(void) {
 
             label = "(Press ESC to Continue)";
             fontSize = p->font.baseSize * 2/3;
-            size =  MeasureTextEx(p->font, label, fontSize, 0);
+            size = MeasureTextEx(p->font, label, fontSize, 0);
             position.x = w/2 - size.x/2;
             position.y = h/2 - size.y/2 + fontSize;
             DrawTextEx(p->font, label, position, fontSize, 0, color);
-        } else { //
-            if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) {
+        } else { // FFmpeg process is going
+            if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) { // Rendering is finished or cancelled
                 // TODO: ffmpeg processes frames slower than we generate them
                 // So when we cancel the rendering ffmpeg is still going and blocking the UI
                 // We need to do something about that. For example inform the user that
@@ -474,7 +490,7 @@ void plug_update(void) {
                 float *fs = (float*)p->wave_samples;
                 for (size_t i = 0; i < chunk_size; ++i) {
                     if (p->wave_cursor < p->wave.frameCount) {
-                        fft_push(fs[p->wave_cursor * p->wave.channels + 0]);
+                        fft_push(fs[p->wave_cursor*p->wave.channels + 0]);
                     } else {
                         fft_push(0);
                     }
@@ -498,6 +514,5 @@ void plug_update(void) {
             }
         }
     }
-
     EndDrawing();
 }

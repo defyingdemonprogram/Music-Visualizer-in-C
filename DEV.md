@@ -70,6 +70,60 @@ cp -r ./resources/ ./build/
 - **`cp -r ./resources/ ./build/`**: Copies the resources directory into the build directory. 
 
 
+### Building `raylib` on Linux
+To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
+
+You need **GCC** (or an alternative C99 compiler), **make**, **git**, and **CMake** to build the system:
+
+```bash
+sudo apt install build-essential git
+sudo apt install cmake
+```
+
+Required libraries include **ALSA** for audio, **Mesa** for OpenGL accelerated graphics, and **X11** for windowing:
+
+```bash
+sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+```
+
+#### Building `raylib` using `make`
+
+You can compile three different types of `raylib` libraries:
+- Static library (default method)
+- Dynamic shared library (often used on Linux)
+- Web library
+
+**Clone the `raylib` repository from GitHub, then compile it as dynamic shared library:**
+
+```bash
+git clone https://github.com/raysan5/raylib.git raylib
+cd raylib
+mkdir build && cd build
+cmake -DBUILD_SHARED_LIBS=ON ..
+make
+sudo make install
+```
+
+**Warning**: If you want to compile a different type of library (static, etc.), you must run `make clean` before recompiling.
+
+**Insatll GLFW library**
+```bash
+sudo apt-get install libglfw3-dev
+```
+### Build and Run the Project
+
+For **Hot Reloading**, execute the following commands:
+
+```bash
+export HOTRELOAD=1
+./build_posix_clang.sh
+export LD_LIBRARY_PATH=./build/
+./build/musializer
+```
+
+This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to above explanation of `build.sh`.
+
+
 ### Converting music format with other using `ffmpeg`
 To convert one file extenstion to other, (note only changing the extention doesnot actually change the encodeing of encoding of that format.)
 ```bash

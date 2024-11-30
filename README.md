@@ -9,122 +9,75 @@ This project aims to construct a visualizer for music and render high quality vi
 ## Demo 
 https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
 
-## Quick Start
+## Build from Source
 
-Dependencies: 
-- [raylib](https://www.raylib.com/) and all its associated transitive dependencies.
-- [ffmpeg](https://ffmpeg.org/) executable available in `PATH` environment variable. (it is called as a child process)
+### External Dependencies:
+- The [ffmpeg](https://ffmpeg.org/) executable must be available in your `PATH` environment variable, as it is invoked as a child process during the build process.
 
+This project utilizes a custom build system written in C called `nob`, which is inspired by [nobuild](https://github.com/tsoding/nobuild). The build system logic is contained in [nob.h](./nob.h), while the main program responsible for triggering the build is [nob.c](./nob.c).
 
-The project provides a bunch of build shell scripts that have the following naming scheme `build_<platform>_<compiler>.sh`. Pick the appropriate one.
+Before using `nob`, you need to bootstrap it by compiling it with a C compiler. On Linux, you can do this with `$ cc -o nob nob.c`, and on Windows (using MSVC and `vcvarsall.bat`), use `$ cl.exe nob.c`. This bootstrap step only needs to be done once. After that, you can use the same executable repeatedly. If you modify [nob.c](./nob.c), the system will attempt to rebuild itself, though this may fail occasionally, requiring a re-bootstrap.
 
-### POSIX
+For more details on how the build system works, refer to [nob.c](./nob.c) and [nob.h](./nob.h).
 
-```console
-./build_posix_clang.sh
+### LINUX
+```bash
+cc -o nob nob.c  # Run this only once
+./nob config -t posix
+./nob build
 ./build/musializer
 ```
 
-Keep in mind that the application needs [./resources/](./resources/) to be present in the folder it is ran from.
-
-### Windows
-
-Windows support is at very early stage right now. Since I don't have a convenient Windows Development Environment, I'm cross compiling Musializer with [MinGW](https://www.mingw-w64.org/). See [./build_windows_mingw.sh](./build_windows_mingw.sh) for more information.
-
-### Build the Program Using `nob`
-
-1. **Compile the `nob.c` file:**
-
-   Use the following command to compile the `nob.c` source file:
-   ```bash
-   clang -o nob nob.c
-   ```
-
-2. **Set and Get Current Configuration:**
-
-   To configure the build settings, run:
-   ```bash
-   ./nob config -t posix -r
-   ```
-   - The `-t` flag specifies the target platform for compilation. The available options are:
-     - `posix`
-     - `win64-mingw`
-     - `win64-msvc`
-   - The `-r` flag enables hot reloading during the compilation of the Musializer app.
-
-   Configuration settings are stored in the `./build/build.conf` file. You can also modify the configuration directly in this file. You may see the help for the application using `./nob config -h`
-
-3. **Build and Run the Program:**
-
-   Once the configuration is set, build and run the program with the following commands:
-   ```bash
-   ./nob build
-   ./build/musializer
-   ```
-
-4. **Run with Hot Reloading:**
-
-   To run the app with hot reloading, you need to specify the directory for the shared library:
-   ```bash
-   export LD_LIBRARY_PATH=./build/
-   ./build/musializer
-   ```
-
-This process will ensure that the program is compiled, configured, and ready to run with hot reloading enabled if needed.
-
-
-### Building `raylib` on Linux
-To set up `raylib` in your environment, follow the [steps on GitHub](https://github.com/raysan5/raylib).
-
-You need **GCC** (or an alternative C99 compiler), **make**, **git**, and **CMake** to build the system:
+To configure the build settings, run:
 
 ```bash
-sudo apt install build-essential git
-sudo apt install cmake
+./nob config -t posix -r
 ```
 
-Required libraries include **ALSA** for audio, **Mesa** for OpenGL accelerated graphics, and **X11** for windowing:
+- The `-t` flag specifies the target platform for compilation. Available options include:
+  - `posix`
+  - `win64-mingw`
+  - `win64-msvc`
 
-```bash
-sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+- The `-r` flag enables hot reloading during the Musializer app's build process.
+
+Configuration settings are stored in the `./build/build.conf` file, which you can edit directly. For help with configuration, use `./nob config -h`.
+
+Ensure that the `./resources/` directory is present in the same folder as the application when running it.
+
+### Windows (MSVC)
+From within `vcvarsall.bat`, execute the following commands:
+
+```cmd
+> cl.exe nob.c  # Run this only once
+> nob.exe
+> build\musializer
 ```
 
-#### Building `raylib` using `make`
-
-You can compile three different types of `raylib` libraries:
-- Static library (default method)
-- Dynamic shared library (often used on Linux)
-- Web library
-
-**Clone the `raylib` repository from GitHub, then compile it as dynamic shared library:**
+### Cross Compilation from Linux to Windows using MinGW-w64
+First, install [MinGW-w64](https://www.mingw-w64.org/) from your Linux distribution’s repository. Then, execute the following commands:
 
 ```bash
-git clone https://github.com/raysan5/raylib.git raylib
-cd raylib
-mkdir build && cd build
-cmake -DBUILD_SHARED_LIBS=ON ..
-make
-sudo make install
+cc -o nob nob.c  # Run this only once
+./nob config -t win64-mingw
+./nob
+wine ./build/musializer.exe
 ```
 
-**Warning**: If you want to compile a different type of library (static, etc.), you must run `make clean` before recompiling.
-
-**Insatll GLFW library**
-```bash
-sudo apt-get install libglfw3-dev
-```
-### Build and Run the Project
-
-For **Hot Reloading**, execute the following commands:
+## Hot Reloading
+**Currently supported on Linux only**  
+To enable hot reloading, follow these steps:
 
 ```bash
-export HOTRELOAD=1
-./build_posix_clang.sh
-export LD_LIBRARY_PATH=./build/
+cc -o nob nob.c
+./nob config -t posix -r
+./nob build
 ./build/musializer
 ```
 
-This process works by encapsulating the majority of the application logic within a `libplug` dynamic library, which can be reloaded on demand. The [rpath](https://en.wikipedia.org/wiki/Rpath) (i.e., the hard-coded run-time search path) for this library is set to `.` and `./build/`. For additional details on the configuration, please refer to [build_posix_clang.sh](./build_posix_clang.sh).
+Keep the application running. To rebuild, run `./nob build`. For hot reloading, focus on the app window and press <kbd>r</kbd> to reload the application.
+
+## Key Navigation in App
 
 - Press <kbd>Q</kbd> or <kbd>ESC</kbd> to exit the program.
 - Press <kbd>R</kbd> to hot reload any changes made to the plugin code while Musializer is running.

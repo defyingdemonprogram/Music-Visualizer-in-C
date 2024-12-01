@@ -23,7 +23,7 @@ For more details on how the build system works, refer to [nob.c](./nob.c) and [n
 ### LINUX
 ```bash
 cc -o nob nob.c  # Run this only once
-./nob config -t posix
+./nob config -t linux
 ./nob build
 ./build/musializer
 ```
@@ -31,11 +31,11 @@ cc -o nob nob.c  # Run this only once
 To configure the build settings, run:
 
 ```bash
-./nob config -t posix -r
+./nob config -t linux -r
 ```
 
 - The `-t` flag specifies the target platform for compilation. Available options include:
-  - `posix`
+  - `linux`
   - `win64-mingw`
   - `win64-msvc`
 
@@ -70,8 +70,7 @@ To enable hot reloading, follow these steps:
 
 ```bash
 cc -o nob nob.c
-./nob config -t posix -r
-./nob build
+./nob
 ./build/musializer
 ```
 

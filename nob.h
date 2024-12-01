@@ -34,7 +34,8 @@
 #endif // _WIN32
 
 #define NOB_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))
-#define NOB_ARRAY_GET(array, index) (NOB_ASSERT(index >= 0), NOB_ASSERT(index < NOB_ARRAY_LEN(array)), array[index])
+#define NOB_ARRAY_GET(array, index) \
+    (NOB_ASSERT(index >= 0), NOB_ASSERT(index < NOB_ARRAY_LEN(array)), array[index])
 
 typedef enum {
     NOB_INFO,
@@ -110,7 +111,7 @@ typedef struct {
     size_t capacity;
 } Nob_String_Builder;
 
-bool nob_read_entire_file(const char* path, Nob_String_Builder *sb);
+bool nob_read_entire_file(const char *path, Nob_String_Builder *sb);
 
 // Append a sized buffer to a string builder
 #define nob_sb_append_buf(sb, buf, size) nob_da_append_many(sb, buf, size)
@@ -133,7 +134,7 @@ bool nob_read_entire_file(const char* path, Nob_String_Builder *sb);
 // Process handle
 #ifdef _WIN32
 typedef HANDLE Nob_Proc;
-#define NOB_INVALID_PROC INVALID_HANDLE_VALUE;
+#define NOB_INVALID_PROC INVALID_HANDLE_VALUE
 #else
 typedef int Nob_Proc;
 #define NOB_INVALID_PROC (-1)
@@ -166,7 +167,6 @@ void nob_cmd_render(Nob_Cmd cmd, Nob_String_Builder *render);
 #define nob_cmd_append(cmd, ...) \
     nob_da_append_many(cmd, ((const char*[]){__VA_ARGS__}), (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)))
 
-
 // Free all the memory allocated by command arguments
 #define nob_cmd_free(cmd) NOB_FREE(cmd.items)
 
@@ -188,7 +188,8 @@ void nob_temp_rewind(size_t checkpoint);
 
 int is_input_path_modified_after_output_path(const char *input_path, const char *output_path);
 bool nob_rename(const char *old_path, const char *new_path);
-int nob_needs_rebuild(const char *output_path, const char **input_path, size_t input_paths_count);
+int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t input_paths_count);
+int nob_file_exists(const char *file_path);
 
 // TODO: add MinGW support for Go Rebuild Urself™ Technology
 #ifndef NOB_REBUILD_URSELF
@@ -264,17 +265,24 @@ typedef struct {
     const char *data;
 } Nob_String_View;
 
+const char *nob_temp_sv_to_cstr(Nob_String_View sv);
+
 Nob_String_View nob_sv_chop_by_delim(Nob_String_View *sv, char delim);
 Nob_String_View nob_sv_trim(Nob_String_View sv);
 bool nob_sv_eq(Nob_String_View a, Nob_String_View b);
 Nob_String_View nob_sv_from_cstr(const char *cstr);
 Nob_String_View nob_sv_from_parts(const char *data, size_t count);
 
-// Print macros for Nob_String_View
-#define SV_Fmt "%.*s"
-#define SV_Arg(sv) (int) (sv).count, (sv).data
+// printf macros for Nob_String_View
+#ifndef SV_Fmt
+#   define SV_Fmt "%.*s"
+#endif // SV_Fmt
+
+#ifndef SV_Arg
+#   define SV_Arg(sv) (int) (sv).count, (sv).data
+#endif // SV_Arg
 // USAGE:
-//   Nob_String_View name = ...;
+//   String_View name = ...;
 //   printf("Name: "SV_Fmt"\n", SV_Arg(name));
 
 
@@ -467,7 +475,7 @@ Nob_Proc nob_cmd_run_async(Nob_Cmd cmd) {
 
     if (cpid == 0) {
         // NOTE: This leaks a bit of memory in the child process.
-        // But do we actually care? It's a one off leak anyone ....
+        // But do we actually care? It's a one off leak anyway...
         Nob_Cmd cmd_null = {0};
         nob_da_append_many(&cmd_null, cmd.items, cmd.count);
         nob_cmd_append(&cmd_null, NULL);
@@ -614,7 +622,7 @@ bool nob_write_entire_file(const char *path, void *data, size_t size) {
 
     FILE *f = fopen(path, "wb");
     if (f == NULL) {
-        nob_log(NOB_ERROR, "Couldnot open %s for writing: %s\n", path, strerror(errno));
+        nob_log(NOB_ERROR, "Couldnot open file %s for writing: %s\n", path, strerror(errno));
         nob_return_defer(false);
     }
 
@@ -626,7 +634,7 @@ bool nob_write_entire_file(const char *path, void *data, size_t size) {
             nob_return_defer(false);
         }
         size -= n;
-        buf += n;
+        buf  += n;
     }
 defer:
     if (f) fclose(f);
@@ -768,6 +776,14 @@ void nob_temp_rewind(size_t checkpoint) {
     nob_temp_size = checkpoint;
 }
 
+const char *nob_temp_sv_to_cstr(Nob_String_View sv) {
+    char *result = nob_temp_alloc(sv.count + 1);
+    NOB_ASSERT(result != NULL && "Extend the size of the temporary allocator");
+    memcpy(result, sv.data, sv.count);
+    result[sv.count] = '\0';
+    return result;
+}
+
 int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t input_paths_count) {
 #ifdef _WIN32
     BOOL bSuccess;
@@ -779,9 +795,11 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
         nob_log(NOB_ERROR, "Couldnot open file %s: %lu", output_path, GetLastError());
         return -1;
     }
-    if (!GetFileTime(input_path_fd, NULL, NULL, &input_path_time)) {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) return 1;
-        nob_log(NOB_ERROR, "Could not get time of %s: %lu", input_path, GetLastError());
+    FILETIME output_path_time;
+    bSuccess = GetFileTime(output_path_fd, NULL, NULL, &output_path_time);
+    CloseHandle(output_path_fd);
+    if (!bSuccess) {
+        nob_log(NOB_ERROR, "Could not get time of %s: %lu", output_path, GetLastError());
         return -1;
     }
 
@@ -800,9 +818,9 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
             nob_log(NOB_ERROR, "Could not get time of %s: %lu", input_path, GetLastError());
             return -1;
         }
-    int input_path_time = statbuf.st_mtime;
+
         // NOTE: if even a single input_path is fresher than output_path that's 100% rebuild
-        if (input_path_time > output_path_time) return 1;
+        if (CompareFileTime(&input_path_time, &output_path_time) == 1) return 1;
     }
 
     return 0;
@@ -876,7 +894,6 @@ defer:
     return result;
 }
 
-
 Nob_String_View nob_sv_chop_by_delim(Nob_String_View *sv, char delim) {
     size_t i = 0;
     while (i < sv->count && sv->data[i] != delim) {
@@ -908,6 +925,7 @@ Nob_String_View nob_sv_trim_left(Nob_String_View sv) {
     while (i < sv.count && isspace(sv.data[i])) {
         i += 1;
     }
+
     return nob_sv_from_parts(sv.data + i, sv.count - i);
 }
 
@@ -934,6 +952,26 @@ bool nob_sv_eq(Nob_String_View a, Nob_String_View b) {
     } else {
         return memcmp(a.data, b.data, a.count) == 0;
     }
+}
+
+// RETURNS:
+//  0 - file does not exists
+//  1 - file exists
+// -1 - error while checking if file exists. The error is logged
+int nob_file_exists(const char *file_path) {
+#if _WIN32
+    // TODO: distinguish between "does not exists" and other errors
+    DWORD dwAttrib = GetFileAttributesA(file_path);
+    return dwAttrib != INVALID_FILE_ATTRIBUTES;
+#else
+    struct stat statbuf;
+    if (stat(file_path, &statbuf) < 0) {
+        if (errno == ENOENT) return 0;
+        nob_log(NOB_ERROR, "Could not check if file %s exists: %s", file_path, strerror(errno));
+        return -1;
+    }
+    return 1;
+#endif // _WIN32
 }
 
 // minirent.h SOURCE BEGIN ////////////////////////////////////////

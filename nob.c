@@ -185,7 +185,6 @@ bool build_musializer(Config config) {
                     nob_cmd_append(&cmd, "-fPIC", "-shared");
                     nob_cmd_append(&cmd, "-o", "./build/libplug.so");
                     nob_cmd_append(&cmd, "./src/plug.c",
-                                        "./src/separate_translation_unit_for_miniaudio.c",
                                         "./src/ffmpeg_linux.c");
                     nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s",
                         NOB_ARRAY_GET(target_names, config.target)),
@@ -221,7 +220,6 @@ bool build_musializer(Config config) {
                 nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
                 nob_cmd_append(&cmd, "-o", "./build/musializer");
                 nob_cmd_append(&cmd, "./src/plug.c",
-                                     "./src/separate_translation_unit_for_miniaudio.c",
                                      "./src/ffmpeg_linux.c",
                                      "./src/main.c");
                 nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s",
@@ -278,7 +276,6 @@ bool build_musializer(Config config) {
                     nob_cmd_append(&cmd, "-I./raylib/raylib-5.0/src/");
                     nob_cmd_append(&cmd, "-o", "./build/musializer");
                     nob_cmd_append(&cmd, "./src/plug.c",
-                                        "./src/separate_translation_unit_for_miniaudio.c",
                                         "./src/ffmpeg_windows.c",
                                         "./src/main.c",
                                         "./build/musializer.res");
@@ -301,7 +298,6 @@ bool build_musializer(Config config) {
                     nob_cmd_append(&cmd,
                         "./src/main.c",
                         "./src/plug.c",
-                        "./src/separate_translation_unit_for_miniaudio.c",
                         "./src/ffmpeg_windows.c"
                         // TODO: building resource file is not implemented for TARGET_WIN64_MSVC
                         //"./build/musializer.res"

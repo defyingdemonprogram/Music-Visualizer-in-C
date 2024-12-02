@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
 ### External Dependencies:
 - The [ffmpeg](https://ffmpeg.org/) executable must be available in your `PATH` environment variable, as it is invoked as a child process during the build process.
 
-This project utilizes a custom build system written in C called `nob`, which is inspired by [nobuild](https://github.com/tsoding/nobuild). The build system logic is contained in [nob.h](./nob.h), while the main program responsible for triggering the build is [nob.c](./nob.c).
+This project utilizes a custom build system written in C called `nob`, which is inspired by [nobuild](https://github.com/tsoding/nobuild). The build system logic is contained in [nob.h](./src/nob.h), while the main program responsible for triggering the build is [nob.c](./nob.c).
 
 Before using `nob`, you need to bootstrap it by compiling it with a C compiler. On Linux, you can do this with `$ cc -o nob nob.c`, and on Windows (using MSVC and `vcvarsall.bat`), use `$ cl.exe nob.c`. This bootstrap step only needs to be done once. After that, you can use the same executable repeatedly. If you modify [nob.c](./nob.c), the system will attempt to rebuild itself, though this may fail occasionally, requiring a re-bootstrap.
 

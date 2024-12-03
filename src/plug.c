@@ -50,11 +50,11 @@ typedef struct {
     Track *items;
     size_t count;
     size_t capacity;
-} Samples;
+} Tracks;
 
 typedef struct {
     // Visualizer
-    Samples samples;
+    Tracks tracks;
     int current_sample;
     Font font;
     Shader circle;
@@ -295,8 +295,8 @@ void plug_init() {
 
 // Pre-reload Function
 Plug *plug_pre_reload(void) {
-    for (size_t i = 0; i < p->samples.count; ++i) {
-        Track *it = &p->samples.items[i];
+    for (size_t i = 0; i < p->tracks.count; ++i) {
+        Track *it = &p->tracks.items[i];
         DetachAudioStreamProcessor(it->music.stream, callback);
     }
     return p;
@@ -305,8 +305,8 @@ Plug *plug_pre_reload(void) {
 // Post-reload Function
 void plug_post_reload(Plug *prev) {
     p = prev;
-    for (size_t i=0; i< p->samples.count; ++i) {
-        Track *it = &p->samples.items[i];
+    for (size_t i=0; i< p->tracks.count; ++i) {
+        Track *it = &p->tracks.items[i];
         AttachAudioStreamProcessor(it->music.stream, callback);
     }
     UnloadShader(p->circle);
@@ -316,8 +316,8 @@ void plug_post_reload(Plug *prev) {
 }
 
 Track *current_sample(void) {
-    if (0 <= p->current_sample && (size_t) p->current_sample < p->samples.count) {
-        return &p->samples.items[p->current_sample];
+    if (0 <= p->current_sample && (size_t) p->current_sample < p->tracks.count) {
+        return &p->tracks.items[p->current_sample];
     }
     return NULL;
 }
@@ -325,6 +325,49 @@ Track *current_sample(void) {
 void error_load_file_popup(void) {
     // TODO: Implement the popup that indicates that we could not load the file
     TraceLog(LOG_ERROR, "Could not load file");
+}
+
+void tracks_panel(Rectangle panel_boundary) {
+    Color background = ColorFromHSV(0, 0, 0.2);
+    Color hoverover = ColorBrightness(background, 0.2);
+    Color selected = ColorBrightness(background, 0.6);
+
+    float panel_height = panel_boundary.height;
+    static float panel_scroll = 0;
+    static float panel_velocity = 0;
+    panel_velocity *= 0.9;
+    panel_velocity += GetMouseWheelMove()*panel_height*4;
+    panel_scroll -= panel_velocity*GetFrameTime();
+    float min_scroll = 0;
+    if (panel_scroll < min_scroll) panel_scroll = min_scroll;
+    float max_scroll = panel_height * p->tracks.count - panel_boundary.width;
+    if (max_scroll < 0) max_scroll = 0;
+    if (panel_scroll > max_scroll) panel_scroll = max_scroll; 
+    float panel_padding = panel_height*0.1;
+
+    for (size_t i = 0; i < p->tracks.count; ++i) {
+        Rectangle item_boundary = {
+            .x = i*panel_height + panel_boundary.x + panel_padding,
+            .y = panel_boundary.y + panel_padding,
+            .width = panel_height - panel_padding *2,
+            .height = panel_height - panel_padding*2,
+        };
+        if (((int) i != p->current_sample)) {
+            if (CheckCollisionPointRec(GetMousePosition(), item_boundary)) {
+                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                    Track *track = current_sample();
+                    if (track) StopMusicStream(track->music);
+                    PlayMusicStream(p->tracks.items[i].music);
+                    p->current_sample = i;
+                }
+                DrawRectangleRec(item_boundary, hoverover);
+            } else {
+                DrawRectangleRec(item_boundary, background);
+            }
+        } else {
+            DrawRectangleRec(item_boundary, selected);
+        }
+    }
 }
 
 // Main Update Function
@@ -389,11 +432,11 @@ void plug_update(void) {
                         AttachAudioStreamProcessor(music.stream, callback);
                         PlayMusicStream(music);
 
-                        nob_da_append(&p->samples, (CLITERAL(Track) {
+                        nob_da_append(&p->tracks, (CLITERAL(Track) {
                             .file_path = file_path,
                             .music = music,
                         }));
-                        p->current_sample = p->samples.count - 1;
+                        p->current_sample = p->tracks.count - 1;
                     } else {
                         free(file_path);
                         error_load_file_popup();
@@ -463,48 +506,12 @@ void plug_update(void) {
 
                 size_t m = fft_analyze(GetFrameTime());
                 fft_render(preview_boundary, m);
-
-                static float panel_scroll = 0;
-                static float panel_velocity = 0;
-                panel_velocity *= 0.9;
-                panel_velocity += GetMouseWheelMove()*panel_height*4;
-                panel_scroll -= panel_velocity*GetFrameTime();
-                float min_scroll = 0;
-                if (panel_scroll < min_scroll) panel_scroll = min_scroll;
-                float max_scroll = panel_height * p->samples.count - w;
-                if (max_scroll < 0) max_scroll = 0;
-                if (panel_scroll > max_scroll) panel_scroll = max_scroll; 
-                Rectangle panel_boundary = {
-                    .x = -panel_scroll,
+                tracks_panel(CLITERAL(Rectangle) {
+                    .x = 0,
                     .y = preview_boundary.height,
                     .width = w,
                     .height = panel_height
-                };
-                float panel_padding = panel_height*0.1;
-
-                for (size_t i = 0; i < p->samples.count; ++i) {
-                    Rectangle item_boundary = {
-                        .x = i*panel_height + panel_boundary.x + panel_padding,
-                        .y = panel_boundary.y + panel_padding,
-                        .width = panel_height - panel_padding *2,
-                        .height = panel_height - panel_padding*2,
-                    };
-                    if (((int) i != p->current_sample)) {
-                        if (CheckCollisionPointRec(GetMousePosition(), item_boundary)) {
-                            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-                                Track *track = current_sample();
-                                if (track) StopMusicStream(track->music);
-                                PlayMusicStream(p->samples.items[i].music);
-                                p->current_sample = i;
-                            }
-                            DrawRectangleRec(item_boundary, RED);
-                        } else {
-                            DrawRectangleRec(item_boundary, WHITE);
-                        }
-                    } else {
-                        DrawRectangleRec(item_boundary, BLUE);
-                    }
-                }
+                });
             } else { // We are waiting for the user to Drag&Drop the Music
                 const char *label = "Drag&Drop Music Here";
                 Color color = WHITE;

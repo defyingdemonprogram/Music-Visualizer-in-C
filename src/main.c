@@ -26,7 +26,7 @@ int main() {
     if (!reload_libplug()) return 1;
 
     Image logo = LoadImage("./resources/logo/logo-256.png");
-    size_t factor = 60;
+    size_t factor = 80;
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(factor*16, factor*9, "Musializer");
     SetWindowIcon(logo);

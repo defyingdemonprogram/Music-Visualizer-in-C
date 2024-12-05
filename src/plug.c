@@ -309,7 +309,6 @@ void plug_init() {
     p->screen = LoadRenderTexture(RENDER_WIDTH, RENDER_HEIGHT);
     p->fullscreen_image = LoadImage("./resources/icons/fullscreen.png");
     p->fullscreen_texture = LoadTextureFromImage(p->fullscreen_image);
-    p->fullscreen_timer = FULLSCREEN_TIMER_SECS;
     SetTextureFilter(p->fullscreen_texture, TEXTURE_FILTER_BILINEAR);
     p->current_track = -1;
 }
@@ -484,14 +483,24 @@ void fullscreen_button(Rectangle preview_boundary) {
         fullscreen_button_size,
     };
 
-    bool hoverover;
-    if (CheckCollisionPointRec(mouse, fullscreen_button_boundary)) {
+    bool hoverover = CheckCollisionPointRec(mouse, fullscreen_button_boundary);
+    if (hoverover) {
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
             p->fullscreen = !p->fullscreen;
         }
-        hoverover = true;
-    } else {
-        hoverover = false;
+    }
+
+    if (p->fullscreen && !hoverover) {
+        static float fullscreen_timer = FULLSCREEN_TIMER_SECS;
+
+        if (Vector2Length(GetMouseDelta()) > 0.0) {
+            fullscreen_timer = FULLSCREEN_TIMER_SECS;
+        }
+        if (fullscreen_timer <= 0) {
+            return;
+        }
+
+        fullscreen_timer -= GetFrameTime();
     }
 
     Color color = hoverover ? COLOR_FULLSCREEN_BUTTON_HOVEROVER : COLOR_FULLSCREEN_BUTTON_BACKGROUND;
@@ -667,14 +676,7 @@ void plug_update(void) {
                     };
                     fft_render(preview_boundary, m);
 
-                    if (p->fullscreen_timer > 0.0) {
-                        fullscreen_button(preview_boundary);
-                        p->fullscreen_timer -= GetFrameTime();
-                    }
-
-                    if (Vector2Length(GetMouseDelta()) > 0.0) {
-                        p->fullscreen_timer = FULLSCREEN_TIMER_SECS;
-                    }
+                    fullscreen_button(preview_boundary);
                 } else {
                     float tracks_panel_width = w*0.25;
                     float timeline_height = h*0.20;

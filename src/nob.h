@@ -189,6 +189,7 @@ void nob_temp_rewind(size_t checkpoint);
 int is_input_path_modified_after_output_path(const char *input_path, const char *output_path);
 bool nob_rename(const char *old_path, const char *new_path);
 int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t input_paths_count);
+int nob_needs_rebuild1(const char *output_path, const char *input_path);
 int nob_file_exists(const char *file_path);
 
 // TODO: add MinGW support for Go Rebuild Urself™ Technology
@@ -849,6 +850,10 @@ int nob_needs_rebuild(const char *output_path, const char **input_paths, size_t 
 
     return 0;
 #endif // _WIN32
+}
+
+int nob_needs_rebuild1(const char *output_path, const char *input_path) {
+    return nob_needs_rebuild(output_path, &input_path, 1);
 }
 
 bool nob_rename(const char *old_path, const char *new_path) {

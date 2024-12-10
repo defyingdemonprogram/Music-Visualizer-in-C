@@ -17,7 +17,7 @@
 #include "nob.h"
 
 #define N (1 << 15)
-#define FONT_SIZE 69
+#define FONT_SIZE 64
 
 #define RENDER_FPS 60
 #define RENDER_FACTOR 120
@@ -172,6 +172,7 @@ static Texture assets_texture(const char *file_path) {
     Texture_Item item = {0};
     item.key = file_path;
     item.value = LoadTextureFromImage(image);
+    GenTextureMipmaps(&item.value);
     SetTextureFilter(item.value, TEXTURE_FILTER_BILINEAR);
     nob_da_append(&p->assets.textures, item);
     return item.value;
@@ -540,7 +541,7 @@ static int fullscreen_button(Rectangle preview_boundary) {
     Color color = hoverover ? COLOR_HUD_BUTTON_HOVEROVER : COLOR_HUD_BUTTON_BACKGROUND;
     
     DrawRectangleRounded(fullscreen_button_boundary, 0.5, 20, color);
-    float icon_size = 380;
+    float icon_size = 512;
     float scale = HUD_BUTTON_SIZE/icon_size*HUD_ICON_SCALE;
     Rectangle dest = {
         fullscreen_button_boundary.x + fullscreen_button_boundary.width/2 - icon_size*scale/2,
@@ -626,7 +627,12 @@ static void volume_slider(Rectangle preview_boundary) {
 
     expanded = dragging || CheckCollisionPointRec(mouse, volume_slider_boundary);
 
-    Color color = COLOR_HUD_BUTTON_HOVEROVER;
+    Color color;
+    if (expanded) {
+        color = COLOR_HUD_BUTTON_HOVEROVER;
+    } else {
+        color = COLOR_HUD_BUTTON_BACKGROUND;
+    }
     DrawRectangleRounded(volume_slider_boundary, 0.5, 20, color);
 
     float icon_size = 512;
@@ -987,6 +993,8 @@ void plug_init(void) {
     memset(p, 0, sizeof(*p));
 
     p->font = LoadFontEx("./resources/fonts/Alegreya-Regular.ttf", FONT_SIZE, NULL, 0);
+    GenTextureMipmaps(&p->font.texture);
+    SetTextureFilter(p->font.texture, TEXTURE_FILTER_BILINEAR);
     p->circle = LoadShader(NULL, "./resources/shaders/circle.fs");
     p->circle_radius_location = GetShaderLocation(p->circle, "radius");
     p->circle_power_location = GetShaderLocation(p->circle, "power");

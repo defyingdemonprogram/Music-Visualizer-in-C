@@ -40,6 +40,7 @@ To configure the build settings, run:
   - `win64-msvc`
 
 - The `-r` flag enables hot reloading during the Musializer app's build process.
+- The `-m` flag enables the visualization of sound from the microphone
 
 Configuration settings are stored in the `./build/build.conf` file, which you can edit directly. For help with configuration, use `./nob config -h`.
 

@@ -283,7 +283,13 @@ bool build_musializer(Config config) {
                 nob_return_defer(false);
             } else {
                 cmd.count = 0;
+                #ifdef _WIN32
+                    // On windows, mingw doesn't have the `x86_64-w64-mingw32-` prefix for windres.
+                    // For gcc, you can use both `x86_64-w64-mingw32-gcc` and just `gcc`
+                    nob_cmd_append(&cmd, "windres");
+                #else
                     nob_cmd_append(&cmd, "x86_64-w64-mingw32-windres");
+                #endif // _WIN32
                     nob_cmd_append(&cmd, "./src/musializer.rc");
                     nob_cmd_append(&cmd, "-O", "coff");
                     nob_cmd_append(&cmd, "-o", "./build/musializer.res");
@@ -626,6 +632,8 @@ int main(int argc, char **argv) {
             nob_cmd_append(&cmd, "-resize", "256");
             nob_cmd_append(&cmd, "./resources/logo/logo-256.ico");
             nob_da_append(&procs, nob_cmd_run_async(cmd));
+        } else {
+            nob_log(NOB_INFO, "./resources/logo/logo-256.ico is up to date");
         }
 
         if (nob_needs_rebuild1("./resources/logo/logo-256.png", "./resources/logo/logo.svg")) {
@@ -636,6 +644,8 @@ int main(int argc, char **argv) {
             nob_cmd_append(&cmd, "-resize", "256");
             nob_cmd_append(&cmd, "./resources/logo/logo-256.png");
             nob_da_append(&procs, nob_cmd_run_async(cmd));
+        } else {
+            nob_log(NOB_INFO, "./resources/logo/logo-256.png is up to date");
         }
 
         if (nob_needs_rebuild1("./resources/icons/fullscreen.png", "./resources/icons/fullscreen.svg")) {
@@ -645,6 +655,8 @@ int main(int argc, char **argv) {
             nob_cmd_append(&cmd, "./resources/icons/fullscreen.svg");
             nob_cmd_append(&cmd, "./resources/icons/fullscreen.png");
             nob_da_append(&procs, nob_cmd_run_async(cmd));
+        } else {
+            nob_log(NOB_INFO, "./resources/icons/fullscreen.png is up to date");
         }
 
         if (nob_needs_rebuild1("./resources/icons/volume.png", "./resources/icons/volume.svg")) {
@@ -654,6 +666,8 @@ int main(int argc, char **argv) {
             nob_cmd_append(&cmd, "./resources/icons/volume.svg");
             nob_cmd_append(&cmd, "./resources/icons/volume.png");
             nob_da_append(&procs, nob_cmd_run_async(cmd));
+        } else {
+            nob_log(NOB_INFO, "./resources/icons/volume.png is up to date");
         }
 
         if (!nob_procs_wait(procs)) return 1;

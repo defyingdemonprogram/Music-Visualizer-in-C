@@ -312,6 +312,12 @@ bool build_musializer(Config config) {
                 nob_return_defer(false);
             } else {
                 cmd.count = 0;
+                    nob_cmd_append(&cmd, "rc");
+                    nob_cmd_append(&cmd, "/fo", "./build/musializer.res");
+                    nob_cmd_append(&cmd, "./src/musializer.rc");
+                    // NOTE: Do not change the order of commandline arguments to rc. Their argparser is weird
+                if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
+                cmd.count = 0;
                     nob_cmd_append(&cmd, "cl.exe");
                     if (config.microphone) nob_cmd_append(&cmd, "/DFEATURE_MICROPHONE");
                     nob_cmd_append(&cmd, "/I", "./raylib/raylib-5.0/src/");
@@ -327,7 +333,7 @@ bool build_musializer(Config config) {
                         "/link",
                         nob_temp_sprintf("/LIBPATH:build/raylib/%s", NOB_ARRAY_GET(target_names, config.target)),
                         "raylib.lib");
-                    nob_cmd_append(&cmd, "Winmm.lib", "gdi32.lib", "User32.lib", "Shell32.lib");
+                    nob_cmd_append(&cmd, "Winmm.lib", "gdi32.lib", "User32.lib", "Shell32.lib", "./build/musializer.res");
                     //nob_cmd_append(&cmd, "-static");
                 if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
             }

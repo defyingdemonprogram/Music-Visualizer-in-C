@@ -39,6 +39,13 @@
 #define HUD_BUTTON_MARGIN   50
 #define HUD_ICON_SCALE      0.5
 
+#define KEY_TOGGLE_PLAY           KEY_SPACE
+#define KEY_RENDER                KEY_R
+#define KEY_RESTART_PLAY          KEY_W
+#define KEY_FULLSCREEN            KEY_F
+#define KEY_CAPTURE_MICROPHONE    KEY_C
+#define KEY_TOGGLE_MUTE           KEY_M
+
 // Microsoft could not update their parser OMEGALUL
 // https://learn.microsoft.com/en-us/cpp/c-runtime-library/complex-math-support?view=msvc-170#types-used-in-complex-math
 #ifdef _MSC_VER
@@ -696,16 +703,18 @@ static void volume_slider(Rectangle preview_boundary) {
         SetMasterVolume(volume);
     }
 
-    if (CheckCollisionPointRec(mouse, volume_icon_boundary)) {
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-            if (volume > 0) {
-                saved_volume = volume;
-                volume = 0;
-            } else {
-                volume = saved_volume;
-            }
-            SetMasterVolume(volume);
+    if (
+        IsKeyPressed(KEY_TOGGLE_MUTE) ||
+        (CheckCollisionPointRec(mouse, volume_icon_boundary) &&
+         IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+    ) {
+        if (volume > 0) {
+            saved_volume = volume;
+            volume = 0;
+        } else {
+            volume = saved_volume;
         }
+        SetMasterVolume(volume);
     }
 }
 
@@ -745,7 +754,7 @@ static void preview_screen(void) {
     }
 
 #ifdef FEATURE_MICROPHONE
-    if (IsKeyPressed(KEY_M)) {
+    if (IsKeyPressed(KEY_CAPTURE_MICROPHONE)) {
         // TODO: let the user choose their mic
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
         deviceConfig.capture.format = ma_format_f32;
@@ -775,7 +784,7 @@ static void preview_screen(void) {
     if (track) { // The music is loaded and ready
         UpdateMusicStream(track->music);
 
-        if (IsKeyPressed(KEY_SPACE)) {
+        if (IsKeyPressed(KEY_TOGGLE_PLAY)) {
             if (IsMusicStreamPlaying(track->music)) {
                 PauseMusicStream(track->music);
             } else {
@@ -783,12 +792,12 @@ static void preview_screen(void) {
             }
         }
 
-        if (IsKeyPressed(KEY_W)) {
+        if (IsKeyPressed(KEY_RESTART_PLAY)) {
             StopMusicStream(track->music);
             PlayMusicStream(track->music);
         }
 
-        if (IsKeyPressed(KEY_R)) {
+        if (IsKeyPressed(KEY_RENDER)) {
             StopMusicStream(track->music);
 
             fft_clean();
@@ -801,7 +810,7 @@ static void preview_screen(void) {
             SetTraceLogLevel(LOG_WARNING);
         }
 
-        if (IsKeyPressed(KEY_F)) {
+        if (IsKeyPressed(KEY_FULLSCREEN)) {
             p->fullscreen = !p->fullscreen;
         }
 
@@ -875,7 +884,7 @@ static void capture_screen(void) {
     int h = GetRenderHeight();
 
     if (p->microphone != NULL) {
-        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_M)) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
             ma_device_uninit(p->microphone);
             p->microphone = NULL;
             p->capturing = false;

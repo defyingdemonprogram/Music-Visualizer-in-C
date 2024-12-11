@@ -95,10 +95,11 @@ Keep the application running. To rebuild, run `./nob build`. For hot reloading, 
 - Press <kbd>Q</kbd> or <kbd>ESC</kbd> to exit the program.
 - Press <kbd>H</kbd> to hot reload any changes made to the plugin code while Musializer is running.
 - Press <kbd>F</kdb> to toogle between full screen.
+- Press <kbd>M</kdb> to toogle between mute and unmute the music.
 - Press <kbd>SPACE</kbd> to toggle pause/play for the music.
 - Press <kbd>W</kbd> to restart the music.
 - Press <kbd>R</kbd> to save the visualization as an `output.mp4` file.
-- Press <kbd>M</kbd> to visualize microphone input, and press <kbd>M</kbd> again to return to the preview UI (available only when the app is ready for you to Drag & Drop the file).
+- Press <kbd>C</kbd> to visualize microphone input, and press <kbd>M</kbd> again to return to the preview UI (available only when the app is ready for you to Drag & Drop the file).
 
 ## References
 

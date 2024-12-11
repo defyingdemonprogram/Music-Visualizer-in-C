@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include <raylib.h>
-#include <raymath.h>
 #include <rlgl.h>
 
 #include "plug.h"
@@ -436,7 +435,9 @@ static void tracks_panel(Rectangle panel_boundary) {
     static float panel_scroll = 0;
     static float panel_velocity = 0;
     panel_velocity *= 0.9;
-    panel_velocity += GetMouseWheelMove()*item_size*8;
+    if (CheckCollisionPointRec(mouse, panel_boundary)) {
+        panel_velocity += GetMouseWheelMove()*item_size*8;
+    }
     panel_scroll -= panel_velocity*GetFrameTime();
 
     static bool scrolling = false;
@@ -667,6 +668,10 @@ static void volume_slider(Rectangle preview_boundary) {
             .width = (expanded_slots - 1)*HUD_BUTTON_SIZE,
             .height = HUD_BUTTON_SIZE,
         }, &volume, &dragging);
+        float mouse_wheel_step = 0.05;
+        volume += GetMouseWheelMove()*mouse_wheel_step;
+        if (volume < 0) volume = 0;
+        if (volume > 1) volume = 1;
         SetMasterVolume(volume);
     }
 }
@@ -786,7 +791,8 @@ static void preview_screen(void) {
                 volume_slider(preview_boundary);
             }
 
-            if (Vector2Length(GetMouseDelta()) > 0.0) {
+            Vector2 delta = GetMouseDelta();
+            if (fabsf(delta.x) + fabsf(delta.y) > 0.0) {
                 hud_timer = HUD_TIMER_SECS;
             }
         } else {
@@ -955,8 +961,8 @@ void rendering_screen(void) {
             DrawRectangleLinesEx(bar_box, 2, WHITE);
 
             // Rendering
-            size_t chunk_size = p->wave.sampleRate / RENDER_FPS;
             {
+                size_t chunk_size = p->wave.sampleRate / RENDER_FPS;
                 float *fs = (float*)p->wave_samples;
                 for (size_t i = 0; i < chunk_size; ++i) {
                     if (p->wave_cursor < p->wave.frameCount) {

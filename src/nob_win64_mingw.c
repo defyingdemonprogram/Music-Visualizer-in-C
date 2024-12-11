@@ -47,7 +47,7 @@ defer:
 bool build_raylib() {
     bool result = true;
     Nob_Cmd cmd = {0};
-    Nob_File_Paths objects_files = {0};
+    Nob_File_Paths object_files = {0};
 
     if (!nob_mkdir_if_not_exists("./build/raylib")) {
         nob_return_defer(false);
@@ -101,7 +101,7 @@ bool build_raylib() {
 
 defer:
     nob_cmd_free(cmd);
-    nob_da_free(object_file);
+    nob_da_free(object_files);
     return result;
 }
 

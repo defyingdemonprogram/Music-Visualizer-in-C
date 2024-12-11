@@ -1,3 +1,4 @@
+// 48f3d6d Upgrade raylib 4.5.0 -> 5.0
 #include <assert.h>
 #include <complex.h>
 #include <math.h>
@@ -5,15 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "plug.h"
+#include "ffmpeg.h"
+#define NOB_IMPLEMENTATION
+#include "nob.h"
+
 #include <raylib.h>
 #include <rlgl.h>
 
-#include "plug.h"
-#include "ffmpeg.h"
 #define _WINDOWS_
 #include "miniaudio.h"
-#define NOB_IMPLEMENTATION
-#include "nob.h"
+
 
 #define FFT_SIZE (1 << 15)
 #define FONT_SIZE 64
@@ -23,7 +26,7 @@
 #define RENDER_WIDTH (16 * RENDER_FACTOR)
 #define RENDER_HEIGHT (9 * RENDER_FACTOR)
 
-#define COLOR_ACCENT                       ColorFromHSV(255, 0.75, 0.8)
+#define COLOR_ACCENT                       ColorFromHSV(225, 0.75, 0.8)
 #define COLOR_BACKGROUND                   GetColor(0x151515FF)
 #define COLOR_TRACK_PANEL_BACKGROUND       ColorBrightness(COLOR_BACKGROUND, -0.1)
 #define COLOR_TRACK_BUTTON_BACKGROUND      ColorBrightness(COLOR_BACKGROUND, 0.15)

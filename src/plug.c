@@ -910,7 +910,7 @@ static void capture_screen(void) {
     int h = GetRenderHeight();
 
     if (p->microphone != NULL) {
-        if (IsKeyPressed(KEY_ESCAPE)) {
+        if (IsKeyPressed(KEY_CAPTURE_MICROPHONE) || IsKeyPressed(KEY_ESCAPE)) {
             ma_device_uninit(p->microphone);
             p->microphone = NULL;
             p->capturing = false;

@@ -503,6 +503,13 @@ static void tracks_panel(Rectangle panel_boundary) {
     if (entire_scrollable_area > visible_area_size) {
         float t = visible_area_size / entire_scrollable_area;
         float q = panel_scroll / entire_scrollable_area;
+        Rectangle scroll_bar_area = {
+            .x = panel_boundary.x + panel_boundary.width - scroll_bar_width,
+            .y = panel_boundary.y,
+            .width = scroll_bar_width,
+            .height = panel_boundary.height,
+        };
+        // TODO: some sort of color for the scroll bar background
         Rectangle scroll_bar_boundary = {
             .x = panel_boundary.x + panel_boundary.width - scroll_bar_width,
             .y = panel_boundary.y + panel_boundary.height*q,
@@ -520,6 +527,14 @@ static void tracks_panel(Rectangle panel_boundary) {
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     scrolling = true;
                     scrolling_mouse_offset = mouse.y - scroll_bar_boundary.y;
+                }
+            } else if (CheckCollisionPointRec(mouse, scroll_bar_area)) {
+                if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                    if (mouse.y < scroll_bar_boundary.y) {
+                        panel_velocity += item_size*16;
+                    } else if (scroll_bar_boundary.y + scroll_bar_boundary.height < mouse.y) {
+                        panel_velocity += -item_size*16;
+                    }
                 }
             }
         }
@@ -585,7 +600,8 @@ static float slider_get_value(float x, float lox, float hix) {
     return x;
 }
 
-static void horz_slider(Rectangle boundary, float *value, bool *dragging) {
+static bool horz_slider(Rectangle boundary, float *value, bool *dragging) {
+    bool updated = false;
     Vector2 mouse = GetMousePosition();
 
     Vector2 startPos = {
@@ -623,20 +639,24 @@ static void horz_slider(Rectangle boundary, float *value, bool *dragging) {
             }
         } else {
             if (CheckCollisionPointRec(mouse, boundary)) {
-                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     *value = slider_get_value(mouse.x, startPos.x, endPos.x);
+                    updated = true;
                 }
             }
         }
     } else {
         *value = slider_get_value(mouse.x, startPos.x, endPos.x);
+        updated = true;
+
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
             *dragging = false;
         }
     }
+    return updated;
 }
 
-static void volume_slider(Rectangle preview_boundary) {
+static bool volume_slider(Rectangle preview_boundary) {
     Vector2 mouse = GetMousePosition();
 
     static int expanded = false;
@@ -689,15 +709,19 @@ static void volume_slider(Rectangle preview_boundary) {
 
     DrawTexturePro(assets_texture("./resources/icons/volume.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
 
+    bool updated = false;
+
     if (expanded) {
-        horz_slider(CLITERAL(Rectangle) {
-            .x = volume_slider_boundary.x + HUD_BUTTON_SIZE,
-            .y = volume_slider_boundary.y,
-            .width = (expanded_slots - 1)*HUD_BUTTON_SIZE,
-            .height = HUD_BUTTON_SIZE,
-        }, &volume, &dragging);
+        updated = horz_slider(CLITERAL(Rectangle) {
+                .x = volume_slider_boundary.x + HUD_BUTTON_SIZE,
+                .y = volume_slider_boundary.y,
+                .width = (expanded_slots - 1)*HUD_BUTTON_SIZE,
+                .height = HUD_BUTTON_SIZE,
+            }, &volume, &dragging);
         float mouse_wheel_step = 0.05;
-        volume += GetMouseWheelMove()*mouse_wheel_step;
+        float wheel_delta = GetMouseWheelMove();
+        volume += wheel_delta*mouse_wheel_step;
+
         if (volume < 0) volume = 0;
         if (volume > 1) volume = 1;
         SetMasterVolume(volume);
@@ -715,7 +739,9 @@ static void volume_slider(Rectangle preview_boundary) {
             volume = saved_volume;
         }
         SetMasterVolume(volume);
+        updated = true;
     }
+    return dragging || updated;
 }
 
 // Main Update Function
@@ -830,7 +856,7 @@ static void preview_screen(void) {
                 int state = fullscreen_button(preview_boundary);
                 if (state & BS_CLICKED) p->fullscreen = !p->fullscreen;
                 if (!(state & BS_HOVEROVER)) hud_timer -= GetFrameTime();
-                volume_slider(preview_boundary);
+                if (volume_slider(preview_boundary)) hud_timer = HUD_TIMER_SECS;
             }
 
             Vector2 delta = GetMouseDelta();

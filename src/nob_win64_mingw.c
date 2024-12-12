@@ -6,7 +6,7 @@ bool build_musializer(void) {
     Nob_Procs procs = {0};
 
 #ifdef MUSIALIZER_HOTRELOAD
-        nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", NOB_ARRAY_GET(MUSIALIZER_TARGET_NAME));
+        nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", MUSIALIZER_TARGET_NAME);
         nob_return_defer(false);
 #else
     cmd.count = 0;
@@ -32,7 +32,7 @@ bool build_musializer(void) {
                             "./src/ffmpeg_windows.c",
                             "./src/main.c",
                             "./build/musializer.res");
-        nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", NOB_ARRAY_GET(MUSIALIZER_TARGET_NAME)), "-l:libraylib.a");
+        nob_cmd_append(&cmd, nob_temp_sprintf("-L./build/raylib/%s", MUSIALIZER_TARGET_NAME), "-l:libraylib.a");
         nob_cmd_append(&cmd, "-lwinmm", "-lgdi32");
         nob_cmd_append(&cmd, "-static");
     if (!nob_cmd_run_sync(cmd)) nob_return_defer(false);
@@ -55,7 +55,7 @@ bool build_raylib() {
 
     Nob_Procs procs = {0};
 
-    const char *build_path = nob_temp_sprintf("./build/raylib/%s", NOB_ARRAY_GET(MUSIALIZER_TARGET_NAME));
+    const char *build_path = nob_temp_sprintf("./build/raylib/%s", MUSIALIZER_TARGET_NAME);
 
     if (!nob_mkdir_if_not_exists(build_path)) {
         nob_return_defer(false);

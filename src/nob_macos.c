@@ -6,7 +6,7 @@ bool build_musializer(void) {
     Nob_Procs procs = {0};
 
 #ifdef MUSIALIZER_HOTRELOAD
-    nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", NOB_ARRAY_GET(MUSIALIZER_TARGET_NAME));
+    nob_log(NOB_ERROR, "TODO: hotreloading is not supported on %s yet", MUSIALIZER_TARGET_NAME);
     nob_return_defer(false);
 #else
 
@@ -98,7 +98,7 @@ bool build_raylib(void) {
 
     if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
         if (config.target != TARGET_LINUX) {
-            nob_log(NOB_ERROR, "TODO: dynamic raylib for %s is not supported yet", NOB_ARRAY_GET(MUSIALIZER_TARGET_NAME));
+            nob_log(NOB_ERROR, "TODO: dynamic raylib for %s is not supported yet", MUSIALIZER_TARGET_NAME);
             nob_return_defer(false);
         }
         nob_cmd_append(&cmd, "cc");

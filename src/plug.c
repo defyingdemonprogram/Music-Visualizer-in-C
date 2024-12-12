@@ -1,4 +1,3 @@
-// 48f3d6d Upgrade raylib 4.5.0 -> 5.0
 #include <assert.h>
 #include <complex.h>
 #include <math.h>
@@ -6,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "plug.h"
 #include "ffmpeg.h"
 #define NOB_IMPLEMENTATION
@@ -153,11 +153,11 @@ typedef struct {
     float out_smooth[FFT_SIZE];
     float out_smear[FFT_SIZE];
 
-#ifdef FEATURE_MICROPHONE
+#ifdef MUSIALIZER_MICROPHONE
     // Microphone
     bool capturing;
     ma_device *microphone;
-#endif // FEATURE_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
 } Plug;
 
 static Plug *p = NULL;
@@ -386,13 +386,13 @@ static void callback(void *bufferData, unsigned int frames) {
     }
 }
 
-#ifdef FEATURE_MICROPHONE
+#ifdef MUSIALIZER_MICROPHONE
 static void ma_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount) {
     callback((void*)pInput, frameCount);
     (void)pOutput;
     (void)pDevice;
 }
-#endif // FEATURE_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
 
 static Track *current_track(void) {
     if (0 <= p->current_track && (size_t) p->current_track < p->tracks.count) {
@@ -782,7 +782,7 @@ static void preview_screen(void) {
         UnloadDroppedFiles(droppedFiles);
     }
 
-#ifdef FEATURE_MICROPHONE
+#ifdef MUSIALIZER_MICROPHONE
     if (IsKeyPressed(KEY_CAPTURE_MICROPHONE)) {
         // TODO: let the user choose their mic
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
@@ -807,7 +807,7 @@ static void preview_screen(void) {
         }
         p->capturing = true;
     }
-#endif // FEATURE_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
 
     Track *track = current_track();
     if (track) { // The music is loaded and ready
@@ -907,7 +907,7 @@ static void preview_screen(void) {
     }
 }
 
-#ifdef FEATURE_MICROPHONE
+#ifdef MUSIALIZER_MICROPHONE
 static void capture_screen(void) {
     int w = GetRenderWidth();
     int h = GetRenderHeight();
@@ -946,7 +946,7 @@ static void capture_screen(void) {
         DrawTextEx(p->font, label, position, fontSize, 0, color);
     }
 }
-#endif // FEATURE_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
 
 void rendering_screen(void) {
     int w = GetRenderWidth();
@@ -1109,7 +1109,7 @@ void plug_update(void) {
     ClearBackground(COLOR_BACKGROUND);
 
     if (!p->rendering) { // We are in the Preview Mode
-#ifdef FEATURE_MICROPHONE
+#ifdef MUSIALIZER_MICROPHONE
         if (p->capturing) {
             capture_screen();
         } else {
@@ -1117,7 +1117,7 @@ void plug_update(void) {
         }
 #else
         preview_screen();
-#endif // FEATURE_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
     } else { // We are in the Rendering Mode
         rendering_screen();
     }

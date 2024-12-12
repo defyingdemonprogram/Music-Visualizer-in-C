@@ -85,9 +85,13 @@ int main(int argc, char **argv) {
         if (!build_raylib()) return 1;
         if (!build_musializer()) return 1;
         if (!nob_copy_directory_recursively("./resources/", "./build/resources/")) return 1;
-        
+
     } else if (strcmp(subcommand, "dist") == 0) {
         if (!build_dist()) return 1;
+    } else if (strcmp(subcommand, "config") == 0) {
+        nob_log(NOB_ERROR, "The `config` command does not exist anymore!");
+        nob_log(NOB_ERROR, "Edit %s to configure the build!", CONFIG_PATH);
+        return 1;
     } else if (strcmp(subcommand, "svg") == 0) {
         Nob_Procs procs = {0};
         Nob_Cmd cmd = {0};
@@ -150,29 +154,55 @@ int main(int argc, char **argv) {
 
 #else
 void generate_default_config(Nob_String_Builder *content) {
+    nob_sb_append_cstr(content, "//// Build target. Pick only one!\n");
 #ifdef _WIN32
 #   if defined(_MSC_VER)
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_LINUX\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
 #   else
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_LINUX\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
 #   endif
 #else
 #   if defined (__APPLE__) || defined (__MACH__)
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_LINUX\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_MACOS\n");
 #   else
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_LINUX\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
 #   endif
 #endif
+    nob_sb_append_cstr(content, "\n");
+    nob_sb_append_cstr(content, "//// Moves everything in src/plub.c to a separate \"DLL\" so it can be hotreloaded. Works only for Linux right now\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_HOTRELOAD\n");
+    nob_sb_append_cstr(content, "//// Unfinished feature that enables capturing sound from the mic.\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_MICROPHONE\n");
 }
 
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
+    const char *program = nob_shift_args(&argc, &argv);
+    const char *build_conf_path = "./build/build.conf";
+    int build_conf_exists = nob_file_exists(build_conf_path);
+    if (build_conf_exists < 0) return 1;
+    if (build_conf_exists) {
+        nob_log(NOB_ERROR, "We found %s. That means your build folder has an old schema.", build_conf_path);
+        nob_log(NOB_ERROR, "Instead of %s you are suppose to use %s to configure the build now.", build_conf_path, CONFIG_PATH);
+        nob_log(NOB_ERROR, "Remove your ./build/ folder and run %s again to regenerate the folder with the new schema.", program);
+        return 1;
+    }
+
     nob_log(NOB_INFO, "--- STAGE 1 ---");
 
-    const char *program = nob_shift_args(&argc, &argv);
     if (!nob_mkdir_if_not_exists("build")) return 1;
 
     int config_exists = nob_file_exists(CONFIG_PATH);
@@ -188,15 +218,8 @@ int main(int argc, char **argv) {
 
     Nob_Cmd cmd = {0};
     const char *configured_binary = "./build/nob.configured";
-    const char *deps[] = { __FILE__, CONFIG_PATH };
-    int needs_rebuild = nob_needs_rebuild(configured_binary, deps, NOB_ARRAY_LEN(deps));
-    if (needs_rebuild < 0) return 1;
-    if (needs_rebuild) {
-        nob_cmd_append(&cmd, NOB_REBUILD_URSELF(configured_binary, "nob.c"), "-DCONFIGURED");
-        if (!nob_cmd_run_sync(cmd)) return 1;
-    } else {
-        nob_log(NOB_INFO, "executable `%s` is up to date", configured_binary);
-    }
+    nob_cmd_append(&cmd, NOB_REBUILD_URSELF(configured_binary, "nob.c"), "-DCONFIGURED");
+    if (!nob_cmd_run_sync(cmd)) return 1;
 
     cmd.count = 0;
     nob_cmd_append(&cmd, configured_binary);

@@ -23,26 +23,10 @@ For more details on how the build system works, refer to [nob.c](./nob.c) and [n
 ### LINUX
 ```bash
 cc -o nob nob.c  # Run this only once
-./nob config -t linux
-./nob build
+./nob
 ./build/musializer
 ```
-
-To configure the build settings, run:
-
-```bash
-./nob config -t linux -r
-```
-
-- The `-t` flag specifies the target platform for compilation. Available options include:
-  - `linux`
-  - `win64-mingw`
-  - `win64-msvc`
-
-- The `-r` flag enables hot reloading during the Musializer app's build process.
-- The `-m` flag enables the visualization of sound from the microphone
-
-Configuration settings are stored in the `./build/build.conf` file, which you can edit directly. For help with configuration, use `./nob config -h`.
+**To compile for your platform, edit the `./build/config.h` file and set the `MUSIALIZER_TARGET` to your platform. Then, run `./nob` to start the compilation process. You can also enable hot reloading by setting `MUSIALIZER_HOTRELOAD`. To enable the microphone in Musializer, set `MUSIALIZER_MICROPHONE`.**
 
 Ensure that the `./resources/` directory is present in the same folder as the application when running it.
 
@@ -71,9 +55,8 @@ From within `vcvarsall.bat`, execute the following commands:
 ### Cross Compilation from Linux to Windows using MinGW-w64
 First, install [MinGW-w64](https://www.mingw-w64.org/) from your Linux distribution’s repository. Then, execute the following commands:
 
-```bash
-cc -o nob nob.c  # Run this only once
-./nob config -t win64-mingw
+**Edit `./build/config.h` and set `MUSIALIZER_TARGET` to `TARGET_WIN64_MINGW`.**
+```
 ./nob
 wine ./build/musializer.exe
 ```
@@ -81,14 +64,15 @@ wine ./build/musializer.exe
 ## Hot Reloading
 **Currently supported on Linux only**  
 To enable hot reloading, follow these steps:
-
-```bash
-cc -o nob nob.c
+**Edit `./build/config.h` and enable `MUSIALIZER_HOTRELOAD`.**
+```
 ./nob
 ./build/musializer
 ```
 
-Keep the application running. To rebuild, run `./nob build`. For hot reloading, focus on the app window and press <kbd>r</kbd> to reload the application.
+Keep the application running. To rebuild, run `./nob`. For hot reloading, focus on the app window and press <kbd>h</kbd> to reload the application.
+
+The application works by placing most of its logic into a `libplug` dynamic library, which is reloaded upon request. The [rpath](https://en.wikipedia.org/wiki/Rpath) (also known as the hard-coded run-time search path) for this library is set to `.` and `./build/`. For more details on the configuration, refer to [src/nob_linux.c](src/nob_linux.c).
 
 ## Key Navigation in App
 

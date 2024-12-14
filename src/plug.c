@@ -185,6 +185,7 @@ typedef struct {
     float out_smear[FFT_SIZE];
 
     uint64_t active_button_id;
+
     Popup_Tray pt;
 
     bool tooltip_show;
@@ -459,32 +460,47 @@ static inline float signf(float x) {
     return 0.0;
 }
 
-void snap_boundary_inside_screen(Rectangle *boundary) {
-    Rectangle screen_boundary = {0};
-    screen_boundary.width = GetScreenWidth();
-    screen_boundary.height = GetScreenHeight();
+static void snap_segment_inside_other_segment(float ls, float rs, float *lt, float *rt) {
+    float dt = *rt - *lt;
+    if (rs < *lt || rs < *rt) {
+        *rt = rs;
+        *lt = rs - dt;
+    }
 
-    Rectangle diff = GetCollisionRec(screen_boundary, *boundary);
-
-    float dx = diff.x - boundary->x;
-    float dy = diff.y - boundary->y;
-    float dw = boundary->width - diff.width;
-    float dh = boundary->height - diff.height;
-    boundary->x += dx;
-    boundary->y += dy;
-    boundary->x -= dw;
-    boundary->y -= dh;
-    // TODO: snapping does not work if tooltips don't have any intersection
+    if (*lt < ls || *rt < ls) {
+        *lt = ls;
+        *rt = ls + dt;
+    }
 }
 
-void align_to_side_of_rect(Rectangle who, Rectangle *what, Side where) {
+static void snap_boundary_inside_screen(Rectangle *boundary) {
+    float ls = 0;
+    float rs = GetScreenWidth();
+    float ts = 0;
+    float bs = GetScreenHeight();
+
+    float lt = boundary->x;
+    float rt = boundary->x + boundary->width;
+    float tt = boundary->y;
+    float bt = boundary->y + boundary->height;
+
+    snap_segment_inside_other_segment(ls, rs, &lt, &rt);
+    snap_segment_inside_other_segment(ts, bs, &tt, &bt);
+
+    boundary->x = lt;
+    boundary->y = tt;
+    boundary->width = rt - lt;
+    boundary->height = bt - tt;
+}
+
+static void align_to_side_of_rect(Rectangle who, Rectangle *what, Side where) {
     switch (where) {
         case SIDE_BOTTOM: {
-                float cx = who.x + who.width/2;
-                float cy = who.y + who.height + TOOLTIP_PADDING;
-                what->x = cx - what->width/2;
-                what->y = cy;
-            } break;
+            float cx = who.x + who.width/2;
+            float cy = who.y + who.height + TOOLTIP_PADDING;
+            what->x = cx - what->width/2;
+            what->y = cy;
+        } break;
 
         case SIDE_TOP: {
             float cx = who.x + who.width/2;
@@ -588,7 +604,7 @@ static int button_with_id(uint64_t id, Rectangle boundary) {
     int clicked = 0;
 
     if (p->active_button_id == 0) {
-        if (hoverover  && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (hoverover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             p->active_button_id = id;
         }
     } else if (p->active_button_id == id) {
@@ -601,7 +617,7 @@ static int button_with_id(uint64_t id, Rectangle boundary) {
 }
 
 #define DJB2_INIT 5381
-static uint64_t djb2(u_int64_t hash, const void *buf, size_t buf_sz) {
+static uint64_t djb2(uint64_t hash, const void *buf, size_t buf_sz) {
     const uint8_t *bytes = buf;
     for (size_t i=0; i<buf_sz; ++i) {
         hash = hash*33 + bytes[i];
@@ -676,7 +692,7 @@ static void tracks_panel_with_location(const char *file, int line, Rectangle pan
                 Track *track = current_track();
                 if (track) StopMusicStream(track->music);
                 PlayMusicStream(p->tracks.items[i].music);
-                p->current_track =  i;
+                p->current_track = i;
             }
         } else {
             color = COLOR_TRACK_BUTTON_SELECTED;
@@ -696,7 +712,7 @@ static void tracks_panel_with_location(const char *file, int line, Rectangle pan
         DrawTextEx(p->font, text, position, fontSize, 0, WHITE);
     }
 
-    if (entire_scrollable_area > visible_area_size) {
+    if (entire_scrollable_area > visible_area_size) { // Is scrolling needed
         float t = visible_area_size / entire_scrollable_area;
         float q = panel_scroll / entire_scrollable_area;
         Rectangle scroll_bar_area = {
@@ -774,6 +790,7 @@ static int fullscreen_button_with_location(const char *file, int line, Rectangle
     DrawTexturePro(assets_texture("./resources/icons/fullscreen.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
 
     if (p->fullscreen) {
+        // TODO: make timeline somehow visible in fullscreen mode (maybe miniversion of it on the toolbar)
         tooltip(fullscreen_button_boundary, "Collapse [F]", SIDE_TOP);
     } else {
         tooltip(fullscreen_button_boundary, "Expand [F]", SIDE_TOP);
@@ -908,7 +925,7 @@ static bool volume_slider_with_location(const char *file, int line, Rectangle vo
     }
 
     uint64_t id = DJB2_INIT;
-    id = djb2(id, &file, strlen(file));
+    id = djb2(id, file, strlen(file));
     id = djb2(id, &line, sizeof(line));
     int volume_icon_state = button_with_id(id, volume_icon_boundary);
     if (
@@ -1006,6 +1023,32 @@ static int play_button_with_location(const char *file, int line, Track *track, R
     return state;
 }
 
+#define render_button(boundary) \
+    render_button_with_location(__FILE__, __LINE__, (boundary))
+static int render_button_with_location(const char *file, int line, Rectangle boundary) {
+    uint64_t id = DJB2_INIT;
+    id = djb2(id, file, strlen(file));
+    id = djb2(id, &line, sizeof(line));
+
+    int state = button_with_id(id, boundary);
+    size_t icon_index = 0;
+
+    float icon_size = 512;
+    float scale = HUD_BUTTON_SIZE/icon_size*HUD_ICON_SCALE;
+    Rectangle dest = {
+        boundary.x + boundary.width/2 - icon_size*scale/2,
+        boundary.y + boundary.height/2 - icon_size*scale/2,
+        icon_size*scale,
+        icon_size*scale
+    };
+
+    Rectangle source = { icon_size*icon_index, 0, icon_size, icon_size };
+    DrawTexturePro(assets_texture("./resources/icons/render.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
+
+    tooltip(boundary, "Render [R]", SIDE_TOP);
+    return state;
+}
+
 static void toggle_track_playing(Track *track) {
     if (IsMusicStreamPlaying(track->music)) {
         PauseMusicStream(track->music);
@@ -1014,12 +1057,27 @@ static void toggle_track_playing(Track *track) {
     }
 }
 
+static void start_rendering_track(Track *track) {
+    StopMusicStream(track->music);
+
+    fft_clean();
+    // TODO: LoadWave is pretty slow on big files
+    p->wave = LoadWave(track->file_path);
+    p->wave_cursor = 0;
+    p->wave_samples = LoadWaveSamples(p->wave);
+    // TODO: set the rendering output path based on the input path
+    // Basically output into the same folder
+    p->ffmpeg = ffmpeg_start_rendering(p->screen.texture.width, p->screen.texture.height, RENDER_FPS, track->file_path);
+    p->rendering = true;
+    SetTraceLogLevel(LOG_WARNING);
+}
+
 // TODO: adapt toolbar to narrow widths
 static bool toolbar(Track *track, Rectangle boundary) {
     bool interacted = false;
     int state = 0;
 
-    if (boundary.width < HUD_BUTTON_SIZE*3) return interacted;
+    if (boundary.width < HUD_BUTTON_SIZE*4) return interacted;
 
     DrawRectangleRec(boundary, COLOR_TRACK_PANEL_BACKGROUND);
     state = play_button(track, (CLITERAL(Rectangle) {
@@ -1034,8 +1092,19 @@ static bool toolbar(Track *track, Rectangle boundary) {
         toggle_track_playing(track);
     }
 
+    state = render_button((CLITERAL(Rectangle) {
+        boundary.x + HUD_BUTTON_SIZE*1,
+        boundary.y,
+        HUD_BUTTON_SIZE,
+        HUD_BUTTON_SIZE,
+    }));
+    if (state & BS_CLICKED) {
+        interacted = true;
+        start_rendering_track(track);
+    }
+
     interacted = interacted || volume_slider((CLITERAL(Rectangle) {
-        boundary.x + HUD_BUTTON_SIZE,
+        boundary.x + HUD_BUTTON_SIZE*2,
         boundary.y,
         HUD_BUTTON_SIZE,
         HUD_BUTTON_SIZE,
@@ -1129,16 +1198,7 @@ static void preview_screen(void) {
         }
 
         if (IsKeyPressed(KEY_RENDER)) {
-            StopMusicStream(track->music);
-
-            fft_clean();
-            // TODO: LoadWave is pretty slow on big files
-            p->wave = LoadWave(track->file_path);
-            p->wave_cursor = 0;
-            p->wave_samples = LoadWaveSamples(p->wave);
-            p->ffmpeg = ffmpeg_start_rendering(p->screen.texture.width, p->screen.texture.height, RENDER_FPS, track->file_path);
-            p->rendering = true;
-            SetTraceLogLevel(LOG_WARNING);
+            start_rendering_track(track);
         }
 
         if (IsKeyPressed(KEY_FULLSCREEN)) {

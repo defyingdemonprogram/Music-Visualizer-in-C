@@ -37,11 +37,14 @@
 #define COLOR_TIMELINE_BACKGROUND          ColorBrightness(COLOR_BACKGROUND, -0.3)
 #define COLOR_HUD_BUTTON_BACKGROUND        COLOR_TRACK_BUTTON_BACKGROUND
 #define COLOR_HUD_BUTTON_HOVEROVER         COLOR_TRACK_BUTTON_HOVEROVER
+#define COLOR_POPUP_BACKGROUND             ColorFromHSV(0, 0.75, 0.8)
 
-#define HUD_TIMER_SECS      1.0f
-#define HUD_BUTTON_SIZE     60
-#define HUD_BUTTON_MARGIN   50
-#define HUD_ICON_SCALE      0.5
+#define HUD_TIMER_SECS            1.0f
+#define HUD_BUTTON_SIZE           60
+#define HUD_BUTTON_MARGIN         50
+#define HUD_ICON_SCALE            0.5
+#define HUD_POPUP_LIFETIME_SECS   2.0f
+#define HUD_POPUP_SLIDEIN_SECS    0.1f
 
 #define KEY_TOGGLE_PLAY           KEY_SPACE
 #define KEY_RENDER                KEY_R
@@ -127,6 +130,22 @@ typedef struct {
 } Assets;
 
 typedef struct {
+    float lifetime;
+} Popup;
+
+#define PT_GET(pt, index) (assert(index < (pt).count), (pt).items[((pt)).begin + index]%POPUP_TRAY_CAPACITY)
+#define PT_FIRST(pt) PT_GET((pt), 0)
+#define PT_LAST(pt) PT_GET((pt), (pt).count - 1)
+
+#define POPUP_TRAY_CAPACITY 10
+typedef struct {
+    Popup items[POPUP_TRAY_CAPACITY];
+    size_t begin;
+    size_t count;
+    float slide;
+} Popup_Tray;
+
+typedef struct {
     Assets assets;
 
     // Visualizer
@@ -155,6 +174,7 @@ typedef struct {
     float out_smear[FFT_SIZE];
 
     uint64_t active_button_id;
+    Popup_Tray pt;
 
 #ifdef MUSIALIZER_MICROPHONE
     // Microphone
@@ -404,9 +424,19 @@ static Track *current_track(void) {
     return NULL;
 }
 
-static void error_load_file_popup(void) {
-    // TODO: Implement the popup that indicates that we could not load the file
-    TraceLog(LOG_ERROR, "Could not load file");
+static void popup_tray_push(void) {
+    if (p->pt.begin == 0) {
+        p->pt.begin = POPUP_TRAY_CAPACITY - 1;
+    } else {
+        p->pt.begin -= 1;
+    }
+
+    if (p->pt.count < POPUP_TRAY_CAPACITY) {
+        p->pt.count += 1;
+    }
+
+    p->pt.slide += HUD_POPUP_SLIDEIN_SECS;
+    p->pt.items[p->pt.begin].lifetime = HUD_POPUP_LIFETIME_SECS + p->pt.slide;
 }
 
 static void timeline(Rectangle timeline_boundary, Track *track) {
@@ -793,6 +823,49 @@ static bool volume_slider_with_location(const char *file, int line, Rectangle pr
     return dragging || updated;
 }
 
+static void popup_tray(Rectangle preview_boundary) {
+    float dt = GetFrameTime();
+    if (p->pt.slide > 0) {
+        p->pt.slide -= dt;
+    }
+    if (p->pt.slide < 0) {
+        p->pt.slide = 0;
+    }
+
+    float popup_width = 250;
+    float popup_height = 75;
+    float popup_padding = 20;
+    for (size_t i = 0; i < p->pt.count; ++i) {
+        Popup *it = &p->pt.items[(p->pt.begin + i)%POPUP_TRAY_CAPACITY];
+        it->lifetime -= dt;
+
+        float t = it->lifetime/HUD_POPUP_LIFETIME_SECS;
+        float alpha = t >= 0.5f ? 1.0f : t/0.5f;
+
+        float q = p->pt.slide / HUD_POPUP_SLIDEIN_SECS;
+
+        Rectangle popup_boundary = {
+            .x = preview_boundary.x + preview_boundary.width - popup_width - popup_padding,
+            .y = preview_boundary.y + preview_boundary.height - (i + 1 - q)*(popup_height + popup_padding),
+            .width = popup_width,
+            .height = popup_height,
+        };
+        DrawRectangleRounded(popup_boundary, 0.3, 20, ColorAlpha(COLOR_POPUP_BACKGROUND, alpha));
+        const char *text = "Could not load file";
+        float fontSize = popup_boundary.width*0.15;
+        Vector2 size = MeasureTextEx(p->font, text, fontSize, 0);
+        Vector2 position = {
+            .x = popup_boundary.x + popup_boundary.width/2 - size.x/2,
+            .y = popup_boundary.y + popup_boundary.height/2 - size.y/2,
+        };
+        DrawTextEx(p->font, text, position, fontSize, 0, ColorAlpha(WHITE, alpha));
+    }
+
+    while (p->pt.count > 0 && p->pt.items[p->pt.begin + p->pt.count - 1].lifetime <= 0) {
+        p->pt.count -= 1;
+    }
+}
+
 // Main Update Function
 static void preview_screen(void) {
     int w = GetRenderWidth();
@@ -822,7 +895,7 @@ static void preview_screen(void) {
                 p->current_track = p->tracks.count - 1;
             } else {
                 free(file_path);
-                error_load_file_popup();
+                popup_tray_push();
             }
         }
         UnloadDroppedFiles(droppedFiles);
@@ -912,6 +985,8 @@ static void preview_screen(void) {
             if (fabsf(delta.x) + fabsf(delta.y) > 0.0) {
                 hud_timer = HUD_TIMER_SECS;
             }
+
+            popup_tray(preview_boundary);
         } else {
             float tracks_panel_width = w*0.25;
             float timeline_height = h*0.20;
@@ -923,6 +998,7 @@ static void preview_screen(void) {
             };
             BeginScissorMode(preview_boundary.x, preview_boundary.y, preview_boundary.width, preview_boundary.height);
             fft_render(preview_boundary, m);
+            popup_tray(preview_boundary);
             EndScissorMode();
 
             tracks_panel((CLITERAL(Rectangle) {
@@ -950,6 +1026,12 @@ static void preview_screen(void) {
         Vector2 size = MeasureTextEx(p->font, label, p->font.baseSize, 0);
         Vector2 position = { w / 2 - size.x / 2, h / 2 - size.y / 2 };
         DrawTextEx(p->font, label, position, p->font.baseSize, 0, color);
+        popup_tray(CLITERAL(Rectangle) {
+            .x = 0,
+            .y = 0,
+            .width = w,
+            .height = h,
+        });
     }
 }
 

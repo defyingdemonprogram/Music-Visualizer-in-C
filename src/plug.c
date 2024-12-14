@@ -424,7 +424,7 @@ static Track *current_track(void) {
     return NULL;
 }
 
-static void popup_tray_push(void) {
+static void popup_tray_push_error(void) {
     if (p->pt.count < POPUP_TRAY_CAPACITY) {
         if (p->pt.begin == 0) {
             p->pt.begin = POPUP_TRAY_CAPACITY - 1;
@@ -872,31 +872,30 @@ static void preview_screen(void) {
     if (IsFileDropped()) {
         FilePathList droppedFiles = LoadDroppedFiles();
         for (size_t i = 0; i < droppedFiles.count; ++i) {
-            char *file_path = strdup(droppedFiles.paths[i]);
-            
-            Track *track = current_track();
-            if (track) StopMusicStream(track->music);
-
-            Music music = LoadMusicStream(file_path);
+            Music music = LoadMusicStream(droppedFiles.paths[i]);
             if (IsMusicReady(music)) {
                 printf("music.frameCount = %u\n", music.frameCount);
                 printf("music.stream.sampleRate = %u\n", music.stream.sampleRate);
                 printf("music.stream.sampleSize = %u\n", music.stream.sampleSize);
                 printf("music.stream.channels = %u\n", music.stream.channels);
                 AttachAudioStreamProcessor(music.stream, callback);
-                PlayMusicStream(music);
-
+                
+                char *file_path = strdup(droppedFiles.paths[i]);
+                assert(file_path != NULL);
                 nob_da_append(&p->tracks, (CLITERAL(Track) {
                     .file_path = file_path,
                     .music = music,
                 }));
-                p->current_track = p->tracks.count - 1;
             } else {
-                free(file_path);
-                popup_tray_push();
+                popup_tray_push_error();
             }
         }
         UnloadDroppedFiles(droppedFiles);
+
+        if (current_track() == NULL && p->tracks.count > 0) {
+            p->current_track = 0;
+            PlayMusicStream(p->tracks.items[0].music);
+        }
     }
 
 #ifdef MUSIALIZER_MICROPHONE

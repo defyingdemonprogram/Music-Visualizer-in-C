@@ -875,8 +875,8 @@ static void popup_tray(Popup_Tray *pt, Rectangle preview_boundary) {
 
 // Main Update Function
 static void preview_screen(void) {
-    int w = GetRenderWidth();
-    int h = GetRenderHeight();
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
 
     if (IsFileDropped()) {
         FilePathList droppedFiles = LoadDroppedFiles();
@@ -979,8 +979,12 @@ static void preview_screen(void) {
             };
             fft_render(preview_boundary, m);
 
+#if 0
             // TODO: there must be a visual clue that we paused the music.
             // Cause when you accidentally click on the preview it feels weird.
+            // TODO: Current UI paradigm can handle with the buttons overlap.
+            // The preview "button" overlaps with volume slider, fullscreen and other
+            // overlay UI elements
             if (button(preview_boundary) & BS_CLICKED) {
                 if (IsMusicStreamPlaying(track->music)) {
                     PauseMusicStream(track->music);
@@ -988,7 +992,9 @@ static void preview_screen(void) {
                     ResumeMusicStream(track->music);
                 }
             }
-
+#else
+            (void) button_with_location; // NOTE: the disabled code is the only user of this functions right now
+#endif // 0
             static float hud_timer = HUD_TIMER_SECS;
             if (hud_timer > 0.0) {
                 int state = fullscreen_button_with_id(preview_boundary);
@@ -1013,6 +1019,12 @@ static void preview_screen(void) {
                 .height = h - timeline_height,
             };
 
+#if 0
+            // TODO: there must be a visual clue that we paused the music.
+            // Cause when you accidentally click on the preview it feels weird.
+            // TODO: Current UI paradigm can handle with the buttons overlap.
+            // The preview "button" overlaps with volume slider, fullscreen and other
+            // overlay UI elements
             if (button(preview_boundary) & BS_CLICKED) {
                 if (IsMusicStreamPlaying(track->music)) {
                     PauseMusicStream(track->music);
@@ -1020,6 +1032,9 @@ static void preview_screen(void) {
                     ResumeMusicStream(track->music);
                 }
             }
+#else
+            (void) button_with_location; // NOTE: the disabled code is the only user of this functions right now
+#endif // 0
 
             BeginScissorMode(preview_boundary.x, preview_boundary.y, preview_boundary.width, preview_boundary.height);
             fft_render(preview_boundary, m);
@@ -1062,8 +1077,8 @@ static void preview_screen(void) {
 
 #ifdef MUSIALIZER_MICROPHONE
 static void capture_screen(void) {
-    int w = GetRenderWidth();
-    int h = GetRenderHeight();
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
 
     if (p->microphone != NULL) {
         if (IsKeyPressed(KEY_CAPTURE_MICROPHONE) || IsKeyPressed(KEY_ESCAPE)) {
@@ -1102,8 +1117,8 @@ static void capture_screen(void) {
 #endif // MUSIALIZER_MICROPHONE
 
 static void rendering_screen(void) {
-    int w = GetRenderWidth();
-    int h = GetRenderHeight();
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
 
     Track *track = current_track();
     NOB_ASSERT(track != NULL);

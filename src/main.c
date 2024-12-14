@@ -1,7 +1,5 @@
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <complex.h>
 #include <raylib.h>
@@ -27,7 +25,7 @@ int main() {
 
     Image logo = LoadImage("./resources/logo/logo-256.png");
     size_t factor = 80;
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_ALWAYS_RUN);
     InitWindow(factor*16, factor*9, "Musializer");
     SetWindowIcon(logo);
     SetTargetFPS(60);

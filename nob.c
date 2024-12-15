@@ -21,6 +21,7 @@
 #define TARGET_WIN64_MINGW   1
 #define TARGET_WIN64_MSVC    2
 #define TARGET_MACOS         3
+#define TARGET_OPENBSD       4
 
 static const char *raylib_modules[] = {
     "rcore",
@@ -41,6 +42,8 @@ static const char *raylib_modules[] = {
 #include "src/nob_win64_mingw.c"
 #elif MUSIALIZER_TARGET == TARGET_WIN64_MSVC
 #include "src/nob_win64_msvc.c"
+#elif MUSIALIZER_TARGET == TARGET_OPENBSD
+#include "src/nob_openbsd.c"
 #endif // MUSIALIZER_TARGET
 
 void log_available_subcommands(const char *program, Nob_Log_Level level) {
@@ -183,11 +186,13 @@ void generate_default_config(Nob_String_Builder *content) {
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_OPENBSDn");
 #   else
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_LINUX\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_OPENBSDn");
 #   endif
 #else
 #   if defined (__APPLE__) || defined (__MACH__)
@@ -195,11 +200,19 @@ void generate_default_config(Nob_String_Builder *content) {
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_MACOS\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_OPENBSDn");
+#elif defined(__OPENBSD__)
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_LINUX\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
+    nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_OPENBSDn");
 #   else
     nob_sb_append_cstr(content, "#define MUSIALIZER_TARGET TARGET_LINUX\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MINGW\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_WIN64_MSVC\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_MACOS\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_TARGET TARGET_OPENBSDn");
 #   endif
 #endif
     nob_sb_append_cstr(content, "\n");

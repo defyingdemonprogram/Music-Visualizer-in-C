@@ -4,7 +4,7 @@
   <img src="./resources/logo/logo-256.png">
 </p>
 
-This project aims to construct a visualizer for music and render high quality videos of them. 
+This project aims to construct a visualizer for music and render high quality videos of them.
 
 ## Demo 
 https://github.com/user-attachments/assets/008f3f4c-4057-4e10-9ce0-e59c2093aeb3
@@ -70,6 +70,14 @@ To enable hot reloading, follow these steps:
 Keep the application running. To rebuild, run `./nob`. For hot reloading, focus on the app window and press <kbd>h</kbd> to reload the application.
 
 The application works by placing most of its logic into a `libplug` dynamic library, which is reloaded upon request. The [rpath](https://en.wikipedia.org/wiki/Rpath) (also known as the hard-coded run-time search path) for this library is set to `.` and `./build/`. For more details on the configuration, refer to [src/nob_linux.c](src/nob_linux.c).
+
+### Supported Audio Formats
+- wav
+- ogg
+- mp3
+- qoa
+- xm
+- mod
 
 ## Key Navigation in App
 

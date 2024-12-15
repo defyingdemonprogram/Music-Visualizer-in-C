@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "targets.h"
 #include "config.h"
 #include "plug.h"
 #include "ffmpeg.h"

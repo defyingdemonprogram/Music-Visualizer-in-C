@@ -9,11 +9,11 @@
 #define NOB_IMPLEMENTATION
 #include "./src/nob.h"
 
-#include "./src/targets.h"
 #define CONFIG_PATH "./build/config.h"
 
 #ifdef CONFIGURED
 
+#include "./src/targets.h"
 #include CONFIG_PATH
 
 #define RAYLIB_VERSION "5.0"
@@ -62,7 +62,92 @@ void log_config(Nob_Log_Level level) {
     nob_log(level, "Microphone: ENABLED");
 #else
     nob_log(level, "Microphone: DISABLED");
-#endif //MUSIALIZER_MICROPHONE
+#endif // MUSIALIZER_MICROPHONE
+}
+
+#define genf(out, ...) \
+    do { \
+        fprintf((out), __VA_ARGS__); \
+        fprintf((out), " // %s:%d\n", __FILE__, __LINE__ - 1); \
+    } while(0)
+
+typedef struct {
+    const char *file_path;
+    size_t offset;
+    size_t size;
+} Resource;
+
+Resource resources[] = {
+    { .file_path = "./resources/logo/logo-256.png" },
+    { .file_path = "./resources/shaders/circle.fs" },
+    { .file_path = "./resources/icons/volume.png" },
+    { .file_path = "./resources/icons/play.png" },
+    { .file_path = "./resources/icons/render.png" },
+    { .file_path = "./resources/icons/fullscreen.png" },
+    { .file_path = "./resources/fonts/Alegreya-Regular.ttf" },
+};
+
+bool generate_resource_bundle(void) {
+    bool result = true;
+    Nob_String_Builder bundle = {0};
+    Nob_String_Builder content = {0};
+    FILE *out = NULL;
+
+    // bundle  = [aaaaaaaaabbbbb]
+    //            ^        ^
+    // content = []
+    // 0, 9
+
+    for (size_t i=0; i<NOB_ARRAY_LEN(resources); ++i) {
+        content.count = 0;
+        if (!nob_read_entire_file(resources[i].file_path, &content)) nob_return_defer(false);
+        resources[i].offset = bundle.count;
+        resources[i].size = content.count;
+        nob_da_append_many(&bundle, content.items, content.count);
+        nob_da_append(&bundle, 0);
+    }
+
+    const char *bundle_h_path = "./build/bundle.h";
+    out = fopen(bundle_h_path, "wb");
+    if (out == NULL) {
+        nob_log(NOB_ERROR, "Could not open file %s for writing: %s", bundle_h_path, strerror(errno));
+        nob_return_defer(false);
+    }
+    
+    genf(out, "#ifndef BUNDLE_H_");
+    genf(out, "#define BUNDLE_H_");
+    genf(out, "typedef struct {");
+    genf(out, "    const char *file_path;");
+    genf(out, "    size_t offset;");
+    genf(out, "    size_t size;");
+    genf(out, "} Resource;");
+    genf(out, "size_t resources_count = %zu;", NOB_ARRAY_LEN(resources));
+    genf(out, "Resource resources[] = {");
+    for (size_t i=0; i<NOB_ARRAY_LEN(resources); ++i) {
+        genf(out, "    {.file_path = \"%s\", .offset = %zu, .size = %zu},",
+               resources[i].file_path, resources[i].offset, resources[i].size);
+    }
+    genf(out, "};");
+
+    genf(out, "unsigned char bundle[] = {");
+    size_t row_size = 20;
+    for (size_t i = 0; i < bundle.count; ) {
+        fprintf(out, "     ");
+        for (size_t col = 0; col < row_size && i < bundle.count; ++col, ++i) {
+            fprintf(out, "0x%02X, ", (unsigned char)bundle.items[i]);
+        }
+        genf(out, "");
+    }
+    genf(out, "};");
+    genf(out, "#endif // BUNDLE_H_");
+
+    nob_log(NOB_INFO, "Generated %s", bundle_h_path);
+
+defer:
+    if (out) fclose(out);
+    free(content.items);
+    free(bundle.items);
+    return result;
 }
 
 int main(int argc, char **argv) {
@@ -81,8 +166,10 @@ int main(int argc, char **argv) {
 
     if (strcmp(subcommand, "build") == 0) {
         if (!build_raylib()) return 1;
+#ifndef MUSIALIZER_UNBUNDLE
+        if (!generate_resource_bundle()) return 1;
+#endif // MUSIALIZER_UNBUNDLE
         if (!build_musializer()) return 1;
-        if (!nob_copy_directory_recursively("./resources/", "./build/resources/")) return 1;
 
     } else if (strcmp(subcommand, "dist") == 0) {
         if (!build_dist()) return 1;
@@ -213,6 +300,10 @@ void generate_default_config(Nob_String_Builder *content) {
     nob_sb_append_cstr(content, "\n");
     nob_sb_append_cstr(content, "//// Moves everything in src/plub.c to a separate \"DLL\" so it can be hotreloaded. Works only for Linux right now\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_HOTRELOAD\n");
+    nob_sb_append_cstr(content, "\n");
+    nob_sb_append_cstr(content, "//// Don't bundle resources/ folder with the executable and load the resources directly from the folder.\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_UNBUNDLE\n");
+    nob_sb_append_cstr(content, "\n");
     nob_sb_append_cstr(content, "//// Unfinished feature that enables capturing sound from the mic.\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_MICROPHONE\n");
 }

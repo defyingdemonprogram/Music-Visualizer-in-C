@@ -16,6 +16,35 @@
 #include <raylib.h>
 #include <rlgl.h>
 
+#ifndef MUSIALIZER_UNBUNDLE
+#include "bundle.h"
+void plug_free_resource(void *data) {
+    (void) data;
+}
+
+void *plug_load_resource(const char *file_path, size_t *size) {
+    for (size_t i=0; i<resources_count; ++i) {
+        if (strcmp(resources[i].file_path, file_path) == 0) {
+            *size = resources[i].size;
+            return &bundle[resources[i].offset];
+        }
+    }
+    return NULL;
+}
+
+#else
+void plug_free_resource(void *data){
+    UnloadFileData(data);
+}
+
+void *plug_load_resource(const char *file_path, size_t *size) {
+    int dataSize;
+    void *data = LoadFileData(file_path, &dataSize);
+    *size = dataSize;
+    return data;
+}
+#endif // MUSIALIZER_UNBUNDLE
+
 #define _WINDOWS_
 #include "miniaudio.h"
 
@@ -209,7 +238,12 @@ static Image assets_image(const char *file_path) {
 
     Image_Item item = {0};
     item.key = file_path;
-    item.value = LoadImage(file_path);
+    
+    size_t data_size;
+    void *data = plug_load_resource(file_path, &data_size);
+    item.value = LoadImageFromMemory(GetFileExtension(file_path), data, data_size);
+    plug_free_resource(data);
+
     nob_da_append(&p->assets.images, item);
     return item.value;
 }
@@ -1274,6 +1308,7 @@ static void preview_screen(void) {
             bool moved = fabsf(delta.x) + fabsf(delta.y) > 0.0;
             if (moved) hud_timer = HUD_TIMER_SECS;
 
+            fft_render(preview_boundary, m);
 #if 0
             // TODO: toggle track playing on right mouse click on the preview
             if (button(preview_boundary) & BS_CLICKED) {
@@ -1504,10 +1539,23 @@ void plug_init(void) {
     assert(p != NULL && "Buy More RAM since it is insufficient");
     memset(p, 0, sizeof(*p));
 
-    p->font = LoadFontEx("./resources/fonts/Alegreya-Regular.ttf", FONT_SIZE, NULL, 0);
+    const char *alegreya_path = "./resources/fonts/Alegreya-Regular.ttf";
+    {
+        size_t data_size;
+        void *data = plug_load_resource(alegreya_path, &data_size);
+        p->font = LoadFontFromMemory(GetFileExtension(alegreya_path), data, data_size, FONT_SIZE, NULL, 0);
+        plug_free_resource(data);
+    }
     GenTextureMipmaps(&p->font.texture);
     SetTextureFilter(p->font.texture, TEXTURE_FILTER_BILINEAR);
-    p->circle = LoadShader(NULL, "./resources/shaders/circle.fs");
+
+    const char *shaders_path = "./resources/shaders/circle.fs";
+    {
+        size_t data_size;
+        void *data = plug_load_resource(shaders_path, &data_size);
+        p->circle = LoadShaderFromMemory(NULL, data);
+        plug_free_resource(data);
+    }
     p->circle_radius_location = GetShaderLocation(p->circle, "radius");
     p->circle_power_location = GetShaderLocation(p->circle, "power");
     p->screen = LoadRenderTexture(RENDER_WIDTH, RENDER_HEIGHT);
@@ -1535,6 +1583,11 @@ void plug_post_reload(Plug *prev) {
     }
     UnloadShader(p->circle);
     p->circle = LoadShader(NULL, "./resources/shaders/circle.fs");
+    const char *shaders_path = "./resources/shaders/circle.fs";
+    size_t data_size;
+    void *data = plug_load_resource(shaders_path, &data_size);
+    p->circle = LoadShaderFromMemory(NULL, data);
+    plug_free_resource(data);
     p->circle_radius_location = GetShaderLocation(p->circle, "radius");
     p->circle_power_location = GetShaderLocation(p->circle, "power");
 }

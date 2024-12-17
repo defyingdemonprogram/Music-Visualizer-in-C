@@ -38,8 +38,6 @@ void plug_free_resource(void *data){
 }
 
 void *plug_load_resource(const char *file_path, size_t *size) {
-    printf("----------------------------\n\n");
-    printf("[RESOURCE]: %s", file_path);
     int dataSize;
     void *data = LoadFileData(file_path, &dataSize);
     *size = dataSize;
@@ -49,7 +47,7 @@ void *plug_load_resource(const char *file_path, size_t *size) {
 
 #define _WINDOWS_
 #include "miniaudio.h"
-
+#include "dr_wav.h"
 
 #define FFT_SIZE (1 << 15)
 #define FONT_SIZE 64
@@ -229,7 +227,8 @@ typedef struct {
     // Microphone
     bool capturing;
     ma_device microphone;
-    bool microphone_ok;
+    drwav wav;
+    bool microphone_working;
 #endif // MUSIALIZER_MICROPHONE
 } Plug;
 
@@ -462,6 +461,14 @@ static void callback(void *bufferData, unsigned int frames) {
     for (size_t i = 0; i < frames; ++i) {
         fft_push(fs[i][0]);
     }
+
+#ifdef MUSIALIZER_MICROPHONE
+    if (p->capturing) {
+        // TODO: according to documentation drwav_write_pcm_frames may not write all the frames.
+        // Make sure it does.
+        drwav_write_pcm_frames(&p->wav, frames, bufferData);
+    }
+#endif // MUSIALIZER_MICROPHONE
 }
 
 #ifdef MUSIALIZER_MICROPHONE
@@ -1122,6 +1129,36 @@ static int render_button_with_location(const char *file, int line, Rectangle bou
     return state;
 }
 
+#ifdef MUSIALIZER_MICROPHONE
+#define microphone_button(boundary) \
+    microphone_button_with_location(__FILE__, __LINE__, (boundary))
+static int microphone_button_with_location(const char *file, int line, Rectangle boundary)
+{
+    uint64_t id = DJB2_INIT;
+    id = djb2(id, file, strlen(file));
+    id = djb2(id, &line, sizeof(line));
+
+    int state = button_with_id(id, boundary);
+    size_t icon_index = 0;
+
+    float icon_size = 512;
+    float scale = HUD_BUTTON_SIZE/icon_size*HUD_ICON_SCALE;
+    Rectangle dest = {
+        boundary.x + boundary.width/2 - icon_size*scale/2,
+        boundary.y + boundary.height/2 - icon_size*scale/2,
+        icon_size*scale,
+        icon_size*scale
+    };
+
+    Rectangle source = {icon_size*icon_index, 0, icon_size, icon_size};
+    DrawTexturePro(assets_texture("./resources/icons/microphone.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
+
+    tooltip(boundary, "Microphone [C]", SIDE_TOP);
+
+    return state;
+}
+#endif // MUSIALIZER_MICROPHONE
+
 static void toggle_track_playing(Track *track) {
     if (IsMusicStreamPlaying(track->music)) {
         PauseMusicStream(track->music);
@@ -1145,6 +1182,55 @@ static void start_rendering_track(Track *track) {
     SetTraceLogLevel(LOG_WARNING);
 }
 
+#ifdef MUSIALIZER_MICROPHONE
+static void start_capture(void)
+{
+    ma_result result = MA_SUCCESS;
+
+    assert(!p->capturing);
+    assert(!p->microphone_working);
+
+    p->capturing = true;
+
+    const char *recording_file_path = "recording.wav";
+
+    drwav_data_format format = {0};
+    format.container = drwav_container_riff;
+    format.format = DR_WAVE_FORMAT_IEEE_FLOAT;
+    format.channels = 2;
+    format.sampleRate = 44100;
+    format.bitsPerSample = 32;
+    if (!drwav_init_file_write(&p->wav, recording_file_path, &format, NULL)) {
+        TraceLog(LOG_ERROR, "DRWAVE: Failed to initialize output file %s", recording_file_path);
+        return;
+    }
+
+    // TODO: let the user choose their mic
+    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
+    deviceConfig.capture.format = ma_format_f32;
+    deviceConfig.capture.channels = 2;
+    deviceConfig.sampleRate = 44100;
+    deviceConfig.dataCallback = ma_callback;
+    deviceConfig.pUserData = NULL;
+    result = ma_device_init(NULL, &deviceConfig, &p->microphone);
+    if (result != MA_SUCCESS) {
+        TraceLog(LOG_ERROR, "MINIAUDIO: Failed to initialize capture device: %s", ma_result_description(result));
+        drwav_uninit(&p->wav);
+        return;
+    }
+
+    result = ma_device_start(&p->microphone);
+    if (result != MA_SUCCESS) {
+        TraceLog(LOG_ERROR, "MINIAUDIO: Failed to start device: %s", ma_result_description(result));
+        ma_device_uninit(&p->microphone);
+        drwav_uninit(&p->wav);
+        return;
+    }
+
+    p->microphone_working = true;
+}
+#endif // MUSIALIZER_MICROPHONE
+
 // TODO: adapt toolbar to narrow widths
 static bool toolbar(Track *track, Rectangle boundary) {
     bool interacted = false;
@@ -1153,37 +1239,58 @@ static bool toolbar(Track *track, Rectangle boundary) {
     if (boundary.width < HUD_BUTTON_SIZE*4) return interacted;
 
     DrawRectangleRec(boundary, COLOR_TRACK_PANEL_BACKGROUND);
+
+    float x = boundary.x;
     state = play_button(track, (CLITERAL(Rectangle) {
-        boundary.x,
+        x,
         boundary.y,
         HUD_BUTTON_SIZE,
         HUD_BUTTON_SIZE,
     }));
 
+    x += HUD_BUTTON_SIZE;
     if (state & BS_CLICKED) {
         interacted = true;
         toggle_track_playing(track);
     }
 
     state = render_button((CLITERAL(Rectangle) {
-        boundary.x + HUD_BUTTON_SIZE*1,
+        x,
         boundary.y,
         HUD_BUTTON_SIZE,
         HUD_BUTTON_SIZE,
     }));
+
+    x += HUD_BUTTON_SIZE;
     if (state & BS_CLICKED) {
         interacted = true;
         start_rendering_track(track);
     }
 
+
+#ifdef MUSIALIZER_MICROPHONE
+    state = microphone_button((CLITERAL(Rectangle) {
+        x,
+        boundary.y,
+        HUD_BUTTON_SIZE,
+        HUD_BUTTON_SIZE,
+    }));
+    x += HUD_BUTTON_SIZE;
+    if (state & BS_CLICKED) {
+        interacted = true;
+        start_capture();
+    }
+#endif // MUSIALIZER_MICROPHONE
+
     bool volume_slider_interacted = volume_slider((CLITERAL(Rectangle) {
-        boundary.x + HUD_BUTTON_SIZE*2,
+        x,
         boundary.y,
         HUD_BUTTON_SIZE,
         HUD_BUTTON_SIZE,
     }));
     interacted = interacted || volume_slider_interacted;
 
+    x += HUD_BUTTON_SIZE;
     state = fullscreen_button_with_id((CLITERAL(Rectangle) {
         boundary.x + boundary.width - HUD_BUTTON_SIZE,
         boundary.y,
@@ -1233,30 +1340,7 @@ static void preview_screen(void) {
     }
 
 #ifdef MUSIALIZER_MICROPHONE
-    if (IsKeyPressed(KEY_CAPTURE_MICROPHONE)) {
-        p->microphone_ok = true;
-        // TODO: let the user choose their mic
-        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
-        deviceConfig.capture.format = ma_format_f32;
-        deviceConfig.capture.channels = 2;
-        deviceConfig.sampleRate = 44100;
-        deviceConfig.dataCallback = ma_callback;
-        deviceConfig.pUserData = NULL;
-        ma_result result = ma_device_init(NULL, &deviceConfig, &p->microphone);
-        if (result != MA_SUCCESS) {
-            TraceLog(LOG_ERROR, "MINIAUDIO: Failed to initialize capture device: %s", ma_result_description(result));
-            p->microphone_ok = false;
-        }
-        if (p->microphone_ok) {
-            ma_result result = ma_device_start(&p->microphone);
-            if (result != MA_SUCCESS) {
-                TraceLog(LOG_ERROR, "MINIAUDIO: Failed to start device: %s", ma_result_description(result));
-                ma_device_uninit(&p->microphone);
-                p->microphone_ok = false;
-            }
-        }
-        p->capturing = true;
-    }
+    if (IsKeyPressed(KEY_CAPTURE_MICROPHONE)) start_capture();
 #endif // MUSIALIZER_MICROPHONE
 
     Track *track = current_track();
@@ -1385,11 +1469,31 @@ static void capture_screen(void) {
     int w = GetScreenWidth();
     int h = GetScreenHeight();
 
-    if (p->microphone_ok) {
+    if (p->microphone_working) {
         if (IsKeyPressed(KEY_CAPTURE_MICROPHONE) || IsKeyPressed(KEY_ESCAPE)) {
             ma_device_uninit(&p->microphone);
-            p->microphone_ok = false;
+            drwav_uninit(&p->wav);
+            p->microphone_working = false;
             p->capturing = false;
+
+            const char *recording_file_path = "recording.wav";
+            Music music = LoadMusicStream(recording_file_path);
+            if (IsMusicReady(music)) {
+                AttachAudioStreamProcessor(music.stream, callback);
+                char *file_path = strdup(recording_file_path);
+                assert(file_path != NULL);
+                nob_da_append(&p->tracks, (CLITERAL(Track) {
+                    .file_path = file_path,
+                    .music = music,
+                }));
+            } else {
+                popup_tray_push(&p->pt);
+            }
+
+            if (current_track() == NULL && p->tracks.count > 0) {
+                p->current_track = 0;
+                PlayMusicStream(p->tracks.items[0].music);
+            }
         }
 
         size_t m = fft_analyze(GetFrameTime());

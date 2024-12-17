@@ -610,6 +610,15 @@ static void tooltip(Rectangle boundary, const char *text, Side align) {
     p->tooltip_element_boundary = boundary;
 }
 
+static void tooltip_persistent(Rectangle boundary, const char *text, Side align, bool persists) {
+    if (!CheckCollisionPointRec(GetMousePosition(), boundary) && !persists) return;
+    p->tooltip_show = true;
+    // TODO: this may not work properly if text contains UTF-8
+    snprintf(p->tooltip_buffer, sizeof(p->tooltip_buffer), "%s", text);
+    p->tooltip_align = align;
+    p->tooltip_element_boundary = boundary;
+}
+
 static void timeline(Rectangle timeline_boundary, Track *track) {
     DrawRectangleRec(timeline_boundary, COLOR_TIMELINE_BACKGROUND);
 
@@ -1001,7 +1010,7 @@ static bool volume_slider_with_location(const char *file, int line, Rectangle vo
         if (volume < 0) volume = 0;
         if (volume > 1) volume = 1;
         SetMasterVolume(volume);
-        tooltip(slider_boundary, TextFormat("Volume %d%%", (int)floorf(volume*100.0f)), SIDE_TOP);
+        tooltip_persistent(slider_boundary, TextFormat("Volume %d%%", (int)floorf(volume*100.0f)), SIDE_TOP, dragging);
     }
 
     uint64_t id = DJB2_INIT;
@@ -1237,6 +1246,13 @@ static bool toolbar(Track *track, Rectangle boundary) {
     int state = 0;
 
     if (boundary.width < HUD_BUTTON_SIZE*4) return interacted;
+#ifdef MUSIALIZER_MICROPHONE
+    size_t buttons_count = 5;
+#else
+    size_t buttons_count = 4;
+#endif // MUSIALIZER_MICROPHONE
+
+    if (boundary.width < HUD_BUTTON_SIZE*buttons_count) return interacted;
 
     DrawRectangleRec(boundary, COLOR_TRACK_PANEL_BACKGROUND);
 

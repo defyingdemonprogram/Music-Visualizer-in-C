@@ -78,6 +78,7 @@ The application works by placing most of its logic into a `libplug` dynamic libr
 - qoa
 - xm
 - mod
+- flac
 
 ## Key Navigation in App
 

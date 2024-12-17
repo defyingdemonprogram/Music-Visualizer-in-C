@@ -68,7 +68,7 @@ bool build_raylib(void) {
         nob_da_append(&object_files, output_path);
 
         if (nob_needs_rebuild(output_path, &input_path, 1)) {
-            nob_cmd_append(&cmd, "cl.exe", "/DPLATFORM_DESKTOP");
+            nob_cmd_append(&cmd, "cl.exe", "/DPLATFORM_DESKTOP", "/DSUPPORT_FILEFORMAT_FLAC=1");
             nob_cmd_append(&cmd, "/I", "./raylib/raylib-"RAYLIB_VERSION"/src/external/glfw/include");
             nob_cmd_append(&cmd, "/c", input_path);
             nob_cmd_append(&cmd, nob_temp_sprintf("/Fo%s", output_path));

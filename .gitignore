@@ -54,6 +54,7 @@ dkms.conf
 # Added later
 *.mp4
 *.mp3
+*.wav
 fft
 foo.c
 raylib-5.0_win64_mingw-w64/*

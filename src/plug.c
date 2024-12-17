@@ -601,17 +601,8 @@ static void end_tooltip_frame(void) {
     DrawTextEx(p->font, p->tooltip_buffer, position, fontSize, spacing, COLOR_TOOLTIP_FOREGROUND);
 }
 
-static void tooltip(Rectangle boundary, const char *text, Side align) {
-    if (!CheckCollisionPointRec(GetMousePosition(), boundary)) return;
-    p->tooltip_show = true;
-    // TODO: this may not work properly if text contains UTF-8
-    snprintf(p->tooltip_buffer, sizeof(p->tooltip_buffer), "%s", text);
-    p->tooltip_align = align;
-    p->tooltip_element_boundary = boundary;
-}
-
-static void tooltip_persistent(Rectangle boundary, const char *text, Side align, bool persists) {
-    if (!CheckCollisionPointRec(GetMousePosition(), boundary) && !persists) return;
+static void tooltip(Rectangle boundary, const char *text, Side align, bool persists) {
+    if (!CheckCollisionPointRec(GetMousePosition(), boundary) || persists) return;
     p->tooltip_show = true;
     // TODO: this may not work properly if text contains UTF-8
     snprintf(p->tooltip_buffer, sizeof(p->tooltip_buffer), "%s", text);
@@ -880,9 +871,9 @@ static int fullscreen_button_with_location(const char *file, int line, Rectangle
 
     if (p->fullscreen) {
         // TODO: make timeline somehow visible in fullscreen mode (maybe miniversion of it on the toolbar)
-        tooltip(fullscreen_button_boundary, "Collapse [F]", SIDE_TOP);
+        tooltip(fullscreen_button_boundary, "Collapse [F]", SIDE_TOP, false);
     } else {
-        tooltip(fullscreen_button_boundary, "Expand [F]", SIDE_TOP);
+        tooltip(fullscreen_button_boundary, "Expand [F]", SIDE_TOP, false);
     }
     return state;
 }
@@ -1010,7 +1001,7 @@ static bool volume_slider_with_location(const char *file, int line, Rectangle vo
         if (volume < 0) volume = 0;
         if (volume > 1) volume = 1;
         SetMasterVolume(volume);
-        tooltip_persistent(slider_boundary, TextFormat("Volume %d%%", (int)floorf(volume*100.0f)), SIDE_TOP, dragging);
+        tooltip(slider_boundary, TextFormat("Volume %d%%", (int)floorf(volume*100.0f)), SIDE_TOP, dragging);
     }
 
     uint64_t id = DJB2_INIT;
@@ -1032,9 +1023,9 @@ static bool volume_slider_with_location(const char *file, int line, Rectangle vo
     }
 
     if (volume <= 0.0) {
-        tooltip(volume_icon_boundary, "Unmute [M]", SIDE_TOP);
+        tooltip(volume_icon_boundary, "Unmute [M]", SIDE_TOP, false);
     } else {
-        tooltip(volume_icon_boundary, "Mute [M]", SIDE_TOP);
+        tooltip(volume_icon_boundary, "Mute [M]", SIDE_TOP, false);
     }
     return dragging || updated;
 }
@@ -1105,9 +1096,9 @@ static int play_button_with_location(const char *file, int line, Track *track, R
     DrawTexturePro(assets_texture("./resources/icons/play.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
 
     if (IsMusicStreamPlaying(track->music)) {
-        tooltip(boundary, "Pause [SPACE]", SIDE_TOP);
+        tooltip(boundary, "Pause [SPACE]", SIDE_TOP, false);
     } else {
-        tooltip(boundary, "Play [SPACE]", SIDE_TOP);
+        tooltip(boundary, "Play [SPACE]", SIDE_TOP, false);
     }
     return state;
 }
@@ -1134,7 +1125,7 @@ static int render_button_with_location(const char *file, int line, Rectangle bou
     Rectangle source = { icon_size*icon_index, 0, icon_size, icon_size };
     DrawTexturePro(assets_texture("./resources/icons/render.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
 
-    tooltip(boundary, "Render [R]", SIDE_TOP);
+    tooltip(boundary, "Render [R]", SIDE_TOP, false);
     return state;
 }
 
@@ -1162,7 +1153,7 @@ static int microphone_button_with_location(const char *file, int line, Rectangle
     Rectangle source = {icon_size*icon_index, 0, icon_size, icon_size};
     DrawTexturePro(assets_texture("./resources/icons/microphone.png"), source, dest, CLITERAL(Vector2){0}, 0, ColorBrightness(WHITE, -0.10));
 
-    tooltip(boundary, "Microphone [C]", SIDE_TOP);
+    tooltip(boundary, "Microphone [C]", SIDE_TOP, false);
 
     return state;
 }

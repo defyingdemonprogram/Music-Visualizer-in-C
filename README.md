@@ -59,7 +59,6 @@ wine ./build/musializer.exe
 ```
 
 ## Hot Reloading
-**Currently supported on Linux and OpenBSD only**  
 To enable hot reloading, follow these steps:
 **Edit `./build/config.h` and enable `MUSIALIZER_HOTRELOAD`.**
 ```

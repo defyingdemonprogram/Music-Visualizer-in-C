@@ -16,9 +16,16 @@
 #include <raylib.h>
 #include <rlgl.h>
 
+#ifdef _WIN32
+#define MUSIALIZER_PLUG __declspec(dllexport)
+#else
+#define MUSIALIZER_PLUG
+#endif // _WIN32
+
 #ifndef MUSIALIZER_UNBUNDLE
 #include "bundle.h"
-void plug_free_resource(void *data) {
+
+MUSIALIZER_PLUG void plug_free_resource(void *data) {
     (void) data;
 }
 
@@ -33,7 +40,7 @@ void *plug_load_resource(const char *file_path, size_t *size) {
 }
 
 #else
-void plug_free_resource(void *data){
+MUSIALIZER_PLUG void plug_free_resource(void *data){
     UnloadFileData(data);
 }
 
@@ -1648,7 +1655,7 @@ static void rendering_screen(void) {
     }
 }
 
-void plug_init(void) {
+MUSIALIZER_PLUG void plug_init(void) {
     p = malloc(sizeof(*p));
     assert(p != NULL && "Buy More RAM since it is insufficient");
     memset(p, 0, sizeof(*p));
@@ -1689,7 +1696,7 @@ Plug *plug_pre_reload(void) {
 }
 
 // Post-reload Function
-void plug_post_reload(Plug *prev) {
+MUSIALIZER_PLUG void plug_post_reload(Plug *prev) {
     p = prev;
     for (size_t i=0; i< p->tracks.count; ++i) {
         Track *it = &p->tracks.items[i];
@@ -1708,7 +1715,7 @@ void plug_post_reload(Plug *prev) {
     p->circle_power_location = GetShaderLocation(p->circle, "power");
 }
 
-void plug_update(void) {
+MUSIALIZER_PLUG void plug_update(void) {
     BeginDrawing();
     ClearBackground(COLOR_BACKGROUND);
 

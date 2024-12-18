@@ -11,11 +11,12 @@
 #include <windows.h>
 
 #include <raylib.h>
+#include "ffmpeg.h"
 
-typedef struct {
+struct FFMPEG {
     HANDLE hProcess;
     HANDLE hPipeWrite;
-} FFMPEG;
+};
 
 FFMPEG *ffmpeg_start_rendering(size_t width, size_t height, size_t fps, const char *sound_file_path)
 {
@@ -96,7 +97,7 @@ bool ffmpeg_send_frame_flipped(FFMPEG *ffmpeg, void *data, size_t width, size_t 
     return true;
 }
 
-bool ffmpeg_end_rendering(FFMPEG *ffmpeg)
+bool ffmpeg_end_rendering(FFMPEG *ffmpeg, bool cancel)
 {
     HANDLE hPipeWrite = ffmpeg->hPipeWrite;
     HANDLE hProcess = ffmpeg->hProcess;
@@ -104,6 +105,8 @@ bool ffmpeg_end_rendering(FFMPEG *ffmpeg)
 
     FlushFileBuffers(hPipeWrite);
     CloseHandle(hPipeWrite);
+
+    if (cancel) TerminateProcess(hProcess, 69);
 
     if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
         TraceLog(LOG_ERROR, "FFMPEG: could not wait on child process. System Error Code: %d", GetLastError());

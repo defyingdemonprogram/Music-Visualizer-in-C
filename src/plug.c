@@ -1,4 +1,3 @@
-// c848672 Implement MUSIALIZER_ACT_ON_PRESS feature flag
 #include <assert.h>
 #include <complex.h>
 #include <math.h>
@@ -213,6 +212,7 @@ typedef struct {
     float *wave_samples;
     size_t wave_cursor;
     FFMPEG *ffmpeg;
+    bool cancel_rendering;
 
     // FFT Analyzer
     float in_raw[FFT_SIZE];
@@ -1088,6 +1088,49 @@ static void popup_tray(Popup_Tray *pt, Rectangle preview_boundary) {
     }
 }
 
+#define cancel_rendering_button(boundary) \
+    cancel_rendering_button_with_location(__FILE__, __LINE__, boundary)
+static int cancel_rendering_button_with_location(const char *file, int line, Rectangle boundary) {
+    uint64_t id = DJB2_INIT;
+    id = djb2(id, file, strlen(file));
+    id = djb2(id, &line, sizeof(line));
+
+    int state = button_with_id(id, boundary);
+
+    Color color = (state & BS_HOVEROVER) ? COLOR_TRACK_BUTTON_HOVEROVER : COLOR_TRACK_BUTTON_BACKGROUND;
+    DrawRectangleRounded(boundary, 0.4, 20, color);
+
+    float pad_x = boundary.width*0.3;
+    float pad_y = boundary.height*0.3;
+    float thick = boundary.width*0.10;
+
+    {
+        Vector2 startPos = {
+            boundary.x + pad_x,
+            boundary.y + pad_y,
+        };
+        Vector2 endPos = {
+            boundary.x + boundary.width - pad_x,
+            boundary.y + boundary.height - pad_y,
+        };
+        DrawLineEx(startPos, endPos, thick, COLOR_TOOLTIP_FOREGROUND);
+    }
+
+    {
+        Vector2 startPos = {
+            boundary.x + pad_x,
+            boundary.y + boundary.height - pad_y,
+        };
+        Vector2 endPos = {
+            boundary.x + boundary.width - pad_x,
+            boundary.y + pad_y,
+        };
+        DrawLineEx(startPos, endPos, thick, COLOR_TOOLTIP_FOREGROUND);
+    }
+
+    return state;
+}
+
 #define play_button(track, boundary) \
     play_button_with_location(__FILE__, __LINE__, (track), (boundary))
 static int play_button_with_location(const char *file, int line, Track *track, Rectangle boundary) {
@@ -1194,6 +1237,7 @@ static void start_rendering_track(Track *track) {
     // Basically output into the same folder
     p->ffmpeg = ffmpeg_start_rendering(p->screen.texture.width, p->screen.texture.height, RENDER_FPS, track->file_path);
     p->rendering = true;
+    p->cancel_rendering = false;
     SetTraceLogLevel(LOG_WARNING);
 }
 
@@ -1580,12 +1624,8 @@ static void rendering_screen(void) {
         position.y = h/2 - size.y/2 + fontSize;
         DrawTextEx(p->font, label, position, fontSize, 0, color);
     } else { // FFmpeg process is going
-        if ((p->wave_cursor >= p->wave.frameCount && fft_settled()) || IsKeyPressed(KEY_ESCAPE)) { // Rendering is finished or cancelled
-            // TODO: ffmpeg processes frames slower than we generate them
-            // So when we cancel the rendering ffmpeg is still going and blocking the UI
-            // We need to do something about that. For example inform the user that
-            // we are finalizing the rendering or something.
-            if (!ffmpeg_end_rendering(p->ffmpeg)) {
+        if ((p->wave_cursor >= p->wave.frameCount && fft_settled())) { // Rendering is finished or cancelled
+            if (!ffmpeg_end_rendering(p->ffmpeg, false)) {
                 // NOTE: Ending FFmpeg process has failed, let's mark ffmpeg handle as NULL
                 // which will be interpreted as "FFmpeg Failure" on the next frame.
                 //
@@ -1600,6 +1640,16 @@ static void rendering_screen(void) {
                 fft_clean();
                 PlayMusicStream(track->music);
             }
+        } else if (IsKeyPressed(KEY_ESCAPE) || p->cancel_rendering) { // Rendering is cancelled
+            ffmpeg_end_rendering(p->ffmpeg, true);
+            p->ffmpeg = NULL;
+
+            SetTraceLogLevel(LOG_INFO);
+            UnloadWave(p->wave);
+            UnloadWaveSamples(p->wave_samples);
+            p->rendering = false;
+            fft_clean();
+            PlayMusicStream(track->music);
         } else { // Rendering is going...
             const char *label = "Rendering video...";
             Color color = WHITE;
@@ -1621,6 +1671,19 @@ static void rendering_screen(void) {
                 .height = bar_height,
             };
             DrawRectangleRec(bar_filling, WHITE);
+
+            {
+                Rectangle boundary = {
+                    .width = HUD_BUTTON_SIZE,
+                    .height = HUD_BUTTON_SIZE,
+                };
+                boundary.x = w - boundary.width - HUD_BUTTON_SIZE*0.5;
+                boundary.y = HUD_BUTTON_SIZE*0.5;
+                tooltip(boundary, "Cancel [Esc]", SIDE_LEFT, false);
+                if (cancel_rendering_button(boundary) & BS_CLICKED) {
+                    p->cancel_rendering = true;
+                }
+            }
 
             Rectangle bar_box = {
                 .x = w/2 - bar_width/2,
@@ -1655,7 +1718,7 @@ static void rendering_screen(void) {
 
             Image image = LoadImageFromTexture(p->screen.texture);
             if (!ffmpeg_send_frame_flipped(p->ffmpeg, image.data, image.width, image.height)) {
-                ffmpeg_end_rendering(p->ffmpeg);
+                ffmpeg_end_rendering(p->ffmpeg, false);
                 p->ffmpeg = NULL;
             }
             UnloadImage(image);

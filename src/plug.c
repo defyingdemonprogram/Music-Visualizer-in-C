@@ -16,10 +16,14 @@
 #include <raylib.h>
 #include <rlgl.h>
 
-#ifdef _WIN32
-#define MUSIALIZER_PLUG __declspec(dllexport)
+#define PLUG(name, ...) name##_t name;
+LIST_OF_PLUGS
+#undef PLUG
+
+#if defined(_WIN32) && defined(MUSIALIZER_HOTRELOAD)
+    #define MUSIALIZER_PLUG __declspec(dllexport)
 #else
-#define MUSIALIZER_PLUG
+    #define MUSIALIZER_PLUG
 #endif // _WIN32
 
 #ifndef MUSIALIZER_UNBUNDLE
@@ -53,8 +57,8 @@ void *plug_load_resource(const char *file_path, size_t *size) {
 #endif // MUSIALIZER_UNBUNDLE
 
 #define _WINDOWS_
-#include "miniaudio.h"
-#include "dr_wav.h"
+#include "external/miniaudio.h"
+#include "external/dr_wav.h"
 
 #define FFT_SIZE (1 << 15)
 #define FONT_SIZE 64
@@ -1757,7 +1761,7 @@ MUSIALIZER_PLUG void plug_init(void) {
 }
 
 // Pre-reload Function
-Plug *plug_pre_reload(void) {
+MUSIALIZER_PLUG void *plug_pre_reload(void) {
     for (size_t i = 0; i < p->tracks.count; ++i) {
         Track *it = &p->tracks.items[i];
         DetachAudioStreamProcessor(it->music.stream, callback);
@@ -1767,7 +1771,7 @@ Plug *plug_pre_reload(void) {
 }
 
 // Post-reload Function
-MUSIALIZER_PLUG void plug_post_reload(Plug *prev) {
+MUSIALIZER_PLUG void plug_post_reload(void *prev) {
     p = prev;
     for (size_t i=0; i< p->tracks.count; ++i) {
         Track *it = &p->tracks.items[i];

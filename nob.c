@@ -63,6 +63,18 @@ void log_config(Nob_Log_Level level) {
 #else
     nob_log(level, "Microphone: DISABLED");
 #endif // MUSIALIZER_MICROPHONE
+
+#ifdef MUSIALIZER_UNBUNDLE
+    nob_log(level, "Unbundle: ENABLED");
+#else
+    nob_log(level, "Unbundle: DISABLED");
+#endif // MUSIALIZER_UNBUNDLE
+#ifdef MUSIALIZER_ACT_ON_PRESS
+    nob_log(level, "Act on Press: ENABLED");
+#else
+    nob_log(level, "Act on Press: DISABLED");
+#endif // MUSIALIZER_ACT_ON_PRESS
+
 }
 
 #define genf(out, ...) \
@@ -271,6 +283,9 @@ void generate_default_config(Nob_String_Builder *content) {
     nob_sb_append_cstr(content, "\n");
     nob_sb_append_cstr(content, "//// Unfinished feature that enables capturing sound from the mic.\n");
     nob_sb_append_cstr(content, "// #define MUSIALIZER_MICROPHONE\n");
+    nob_sb_append_cstr(content, "\n");
+    nob_sb_append_cstr(content, "//// Activate UI buttons on Press instead of Release just as John Carmack explained https://twitter.com/ID_AA_Carmack/status/1787850053912064005\n");
+    nob_sb_append_cstr(content, "// #define MUSIALIZER_ACT_ON_PRESS\n");
 }
 
 int main(int argc, char **argv) {

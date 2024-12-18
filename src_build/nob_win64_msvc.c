@@ -18,7 +18,7 @@ bool build_musializer(void) {
             nob_cmd_append(&cmd, "cl.exe");
             nob_cmd_append(&cmd, "/LD");
             nob_cmd_append(&cmd, "/Fobuild\\", "/Fe./build/libplug.dll");
-            nob_cmd_append(&cmd, "/I", "./build/");
+            nob_cmd_append(&cmd, "/I", "./");
             nob_cmd_append(&cmd, "/I", "./raylib/raylib-"RAYLIB_VERSION"/src/");
             nob_cmd_append(&cmd,
                 "src/plug.c",
@@ -32,7 +32,7 @@ bool build_musializer(void) {
             
         cmd.count = 0;
             nob_cmd_append(&cmd, "cl.exe");
-            nob_cmd_append(&cmd, "/I", "./build/");
+            nob_cmd_append(&cmd, "/I", "./");
             nob_cmd_append(&cmd, "/I", "./raylib/raylib-"RAYLIB_VERSION"/src/");
             nob_cmd_append(&cmd, "/Fobuild\\", "/Febuild\\musializer.exe");
             nob_cmd_append(&cmd,
@@ -52,7 +52,7 @@ bool build_musializer(void) {
 
     cmd.count = 0;
         nob_cmd_append(&cmd, "cl.exe");
-        nob_cmd_append(&cmd, "/I", "./build");
+        nob_cmd_append(&cmd, "/I", "./");
         nob_cmd_append(&cmd, "/I", "./raylib/raylib-"RAYLIB_VERSION"/src/");
         nob_cmd_append(&cmd, "/Fobuild\\", "/Febuild\\musializer.exe");
         nob_cmd_append(&cmd,
@@ -95,12 +95,12 @@ bool build_raylib(void) {
 
     for (size_t i = 0; i < NOB_ARRAY_LEN(raylib_modules); ++i) {
         const char *input_path = nob_temp_sprintf("./raylib/raylib-"RAYLIB_VERSION"/src/%s.c", raylib_modules[i]);
-        const char *output_path = nob_temp_sprintf("%s/%s.o", build_path, raylib_modules[i]);
-        output_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
+        const char *output_path = nob_temp_sprintf("%s/%s.obj", build_path, raylib_modules[i]);
         
         nob_da_append(&object_files, output_path);
 
         if (nob_needs_rebuild(output_path, &input_path, 1)) {
+            cmd.count = 0;
             nob_cmd_append(&cmd, "cl.exe", "/DPLATFORM_DESKTOP", "/DSUPPORT_FILEFORMAT_FLAC=1");
             #ifdef MUSIALIZER_HOTRELOAD
                 nob_cmd_append(&cmd, "/DBUILD_LIBTYPE_SHARED");
@@ -116,7 +116,7 @@ bool build_raylib(void) {
     cmd.count = 0;
     if (!nob_procs_wait(procs)) nob_return_defer(false);
 
-#ifdef MUSIALIZER_HOTRELOAD
+#ifndef MUSIALIZER_HOTRELOAD
     const char *libraylib_path = nob_temp_sprintf("%s/raylib.lib", build_path);
     if (nob_needs_rebuild(libraylib_path, object_files.items, object_files.count)) {
         nob_cmd_append(&cmd, "lib");

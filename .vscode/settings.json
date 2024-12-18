@@ -3,6 +3,9 @@
         "stdbool.h": "c",
         "plug.h": "c",
         "stdint.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "targets.h": "c",
+        "config.h": "c",
+        "bundle.h": "c"
     }
 }

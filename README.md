@@ -28,8 +28,6 @@ cc -o nob nob.c  # Run this only once
 ```
 **To compile for your platform, edit the `./build/config.h` file and set the `MUSIALIZER_TARGET` to your platform. Then, run `./nob` to start the compilation process. You can also enable hot reloading by setting `MUSIALIZER_HOTRELOAD`. To enable the microphone in Musializer, set `MUSIALIZER_MICROPHONE`.**
 
-Ensure that the `./resources/` directory is present in the same folder as the application when running it.
-
 If the build fails because of missing header files, you may need to install the X11 dev packages.
 
 On Debian, Ubuntu, etc, do this:

@@ -32,7 +32,7 @@ If the build fails because of missing header files, you may need to install the 
 
 On Debian, Ubuntu, etc, do this:
 ```bash
-sudo apt install libx11-dev libxcursor-dev install libxrandr-dev
+sudo apt install libx11-dev libxcursor-dev libxrandr-dev
 sudo apt install libxinerama-dev libxi-dev
 ```
 

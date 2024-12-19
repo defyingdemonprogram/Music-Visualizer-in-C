@@ -14,13 +14,13 @@ int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
 
     const char *program = nob_shift_args(&argc, &argv);
-    const char *build_conf_path = "./build/build.conf";
-    int build_conf_exists = nob_file_exists(build_conf_path);
+    const char *old_build_conf_path = "./build/build.conf";
+    int build_conf_exists = nob_file_exists(old_build_conf_path);
     if (build_conf_exists < 0) return 1;
     if (build_conf_exists) {
         // @backcomp
-        nob_log(NOB_ERROR, "We found %s. That means your build folder has an old schema.", build_conf_path);
-        nob_log(NOB_ERROR, "Instead of %s you are suppose to use %s to configure the build now.", build_conf_path, CONFIG_PATH);
+        nob_log(NOB_ERROR, "We found %s. That means your build folder has an old schema.", old_build_conf_path);
+        nob_log(NOB_ERROR, "Instead of %s you are suppose to use %s to configure the build now.", old_build_conf_path, CONFIG_PATH);
         nob_log(NOB_ERROR, "Remove your ./build/ folder and run %s again to regenerate the folder with the new schema.", program);
         return 1;
     }
@@ -29,22 +29,16 @@ int main(int argc, char **argv) {
 
     if (!nob_mkdir_if_not_exists("build")) return 1;
 
-    Nob_String_Builder content = {0};
     int config_exists = nob_file_exists(CONFIG_PATH);
     if (config_exists < 0) return 1;
     if (config_exists == 0) {
-        nob_log(NOB_INFO, "Generating %s", CONFIG_PATH);
-        generate_default_config(&content);
-        if (!nob_write_entire_file(CONFIG_PATH, content.items, content.count)) return 1;
+        if (!generate_default_config(CONFIG_PATH)) return 1;
     } else {
         nob_log(NOB_INFO, "File `%s` already exists", CONFIG_PATH);
     }
 
-    nob_log(NOB_INFO, "Generating build/config_logger.c");
-    content.count = 0;
-    generate_config_logger(&content);
-    if (!nob_write_entire_file("build/config_logger.c", content.items, content.count)) return 1;
-
+    if (!generate_config_logger("build/config_logger.c")) return 1;
+    
     Nob_Cmd cmd = {0};
     const char *stage2_binary = "build/nob_stage2";
     nob_cmd_append(&cmd, NOB_REBUILD_URSELF(stage2_binary, "./src_build/nob_stage2.c"));

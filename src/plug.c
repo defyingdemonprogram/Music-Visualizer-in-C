@@ -1,4 +1,3 @@
-// 55c73b6 Factor out src_build/nob_configured.c
 #include <assert.h>
 #include <complex.h>
 #include <math.h>

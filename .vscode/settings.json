@@ -6,6 +6,7 @@
         "stdlib.h": "c",
         "targets.h": "c",
         "config.h": "c",
-        "bundle.h": "c"
+        "bundle.h": "c",
+        "string.h": "c"
     }
 }

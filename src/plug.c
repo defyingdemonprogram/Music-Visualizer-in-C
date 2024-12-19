@@ -1,3 +1,4 @@
+// 55c73b6 Factor out src_build/nob_configured.c
 #include <assert.h>
 #include <complex.h>
 #include <math.h>
@@ -6,7 +7,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "src_build/targets.h"
 #include "build/config.h"
 #include "plug.h"
 #include "ffmpeg.h"

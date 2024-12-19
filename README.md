@@ -52,7 +52,7 @@ From within `vcvarsall.bat`, execute the following commands:
 ### Cross Compilation from Linux to Windows using MinGW-w64
 First, install [MinGW-w64](https://www.mingw-w64.org/) from your Linux distribution’s repository. Then, execute the following commands:
 
-**Edit `./build/config.h` and set `MUSIALIZER_TARGET` to `TARGET_WIN64_MINGW`.**
+**Edit `./build/config.h` and set `MUSIALIZER_TARGET_WIN64_MINGW`  instead `MUSIALIZER_TARGET_LINUX`.**
 ```
 ./nob
 wine ./build/musializer.exe

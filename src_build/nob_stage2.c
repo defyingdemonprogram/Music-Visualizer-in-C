@@ -112,7 +112,7 @@ bool generate_resource_bundle(void) {
         for (size_t col = 0; col < row_size && i < bundle.count; ++col, ++i) {
             fprintf(out, "0x%02X, ", (unsigned char)bundle.items[i]);
         }
-        genf(out, "");
+        genf(out, " ");
     }
     genf(out, "};");
     genf(out, "#endif // BUNDLE_H_");
